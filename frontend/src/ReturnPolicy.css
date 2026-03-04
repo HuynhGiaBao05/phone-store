@@ -1,0 +1,31 @@
+.return-page {
+  padding: 140px 20px;
+  background: #000;
+  min-height: 100vh;
+}
+
+.return-container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.return-container h1 {
+  font-size: 36px;
+  margin-bottom: 40px;
+}
+
+.return-container h3 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  color: #ff3c3c;
+}
+
+.return-container p,
+.return-container li {
+  color: #aaa;
+  line-height: 1.7;
+}
+
+.return-container ul {
+  padding-left: 20px;
+}

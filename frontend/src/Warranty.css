@@ -1,0 +1,31 @@
+.warranty-page {
+  padding: 140px 20px;
+  background: #000;
+  min-height: 100vh;
+}
+
+.warranty-container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.warranty-container h1 {
+  font-size: 36px;
+  margin-bottom: 40px;
+}
+
+.warranty-container h3 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  color: #ff3c3c;
+}
+
+.warranty-container p,
+.warranty-container li {
+  color: #aaa;
+  line-height: 1.7;
+}
+
+.warranty-container ul {
+  padding-left: 20px;
+}

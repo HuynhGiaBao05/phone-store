@@ -1,0 +1,196 @@
+body {
+  background: #f1f3f6;
+}
+
+.cart-page {
+  max-width: 800px;
+  margin: 40px auto 120px;
+  padding: 0 20px;
+  padding-top: 40px;
+}
+
+.cart-title {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* ===== CARD ===== */
+.cart-item {
+  display: grid;
+  grid-template-columns: 30px 100px 1fr 40px;
+  gap: 20px;
+
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* Checkbox */
+.check-circle {
+  width: 18px;
+  height: 18px;
+  border: 2px solid red;
+  border-radius: 50%;
+  margin-top: 8px;
+}
+
+/* Image */
+.cart-item img {
+  width: 100px;
+  border-radius: 10px;
+}
+
+/* Info */
+.item-info h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.price-box {
+  margin-bottom: 10px;
+}
+
+.new-price {
+  color: red;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.old-price {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* Qty */
+.qty {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.qty button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #eee;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Promo */
+.promo-box {
+  background: #f7f7f7;
+  padding: 15px;
+  border-radius: 15px;
+  font-size: 14px;
+}
+
+.promo-box ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.delete-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #999;
+}
+
+/* ===== BOTTOM BAR ===== */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  background: white;
+  padding: 20px;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.temp {
+  font-weight: bold;
+}
+
+.save {
+  color: #0071e3;
+  font-size: 14px;
+}
+
+.buy-now-btn {
+  background: #e60012;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.buy-now-btn:hover {
+  background: #c8000f;
+}
+
+
+.select-all-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.remove-selected-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: red;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ============================= */
+/* 🔥 CHECKBOX STYLE TOPZONE tích  */
+/* ============================= */
+
+.check-circle {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #e60023;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.check-circle::after {
+  content: "✓";
+  color: white;
+  font-size: 14px;
+  transform: scale(0);
+  transition: transform 0.2s ease;
+}
+
+/* Khi được chọn */
+.check-circle.checked {
+  background: #e60023;
+  border-color: #e60023;
+}
+
+.check-circle.checked::after {
+  transform: scale(1);
+}
+
+/* Hover effect */
+.check-circle:hover {
+  transform: scale(1.1);
+}

@@ -1,0 +1,289 @@
+/* ================= PAGE ================= */
+
+.product-detail-page {
+  background: #2c2c2c;
+  padding: 80px 60px;
+  color: white;
+  min-height: 100vh;
+}
+
+.detail-container {
+  display: flex;
+  gap: 60px;
+}
+
+/* ================= LEFT ================= */
+
+.detail-left {
+  width: 50%;
+}
+
+.main-image {
+  background: #1f1f1f;
+  padding: 30px;
+  border-radius: 20px;
+}
+
+.main-image img {
+  width: 100%;
+  object-fit: contain;
+}
+
+.thumbnail-row {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.thumbnail-row img {
+  width: 80px;
+  background: #1f1f1f;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* ================= RIGHT ================= */
+
+.detail-right {
+  width: 50%;
+}
+
+.product-title {
+  font-size: 28px;
+  margin-bottom: 25px;
+}
+
+/* ================= PRICE BOX ================= */
+
+.price-highlight-box {
+  background: linear-gradient(135deg, #ff7a18, #ff3c3c);
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+}
+
+.new-price {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.vat-note {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #ddd;
+}
+
+/* ================= PROMO BOX ================= */
+
+.promo-highlight-box {
+  background: linear-gradient(90deg, #ff5a2c, #ff8a00);
+  border-radius: 20px;
+  padding: 20px 30px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.promo-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.promo-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.promo-price {
+  font-size: 32px;
+  font-weight: bold;
+  margin: 6px 0;
+}
+
+.promo-original {
+  text-decoration: line-through;
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+/* ================= COUNTDOWN ================= */
+
+.promo-right {
+  text-align: right;
+}
+
+.countdown-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.countdown-time {
+  font-size: 26px;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.countdown-meta {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* ================= BADGE ================= */
+
+.expiring-badge {
+  background: #ff3b30;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: 10px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* ================= PROMOTION LIST ================= */
+
+.promotion-box {
+  background: #1f1f1f;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+.promotion-box ul {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+/* ================= BUTTONS ================= */
+
+.button-group {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.buy-now {
+  flex: 1;
+  background: #ff3c3c;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.installment {
+  flex: 1;
+  background: #1677ff;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ================= DESCRIPTION ================= */
+
+.product-description {
+  background: #1f1f1f;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+/* ================= LOGIN MODAL ================= */
+
+.login-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.login-modal {
+  background: white;
+  padding: 30px;
+  width: 90%;
+  max-width: 360px;
+  border-radius: 14px;
+  text-align: center;
+  animation: fadeInScale 0.25s ease;
+}
+
+.login-modal h3 {
+  margin-bottom: 10px;
+  color: #111;
+}
+
+.login-modal p {
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.login-modal-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-login {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: #ff3b30;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 992px) {
+  .detail-container {
+    flex-direction: column;
+  }
+
+  .detail-left,
+  .detail-right {
+    width: 100%;
+  }
+
+  .product-detail-page {
+    padding: 40px 20px;
+  }
+
+  .promo-highlight-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .promo-right {
+    text-align: left;
+  }
+}

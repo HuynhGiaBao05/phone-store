@@ -1,0 +1,188 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+import "./AdminStores.css";
+
+function AdminStores() {
+
+  const [stores, setStores] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+
+  const [form, setForm] = useState({
+    name: "",
+    address: "",
+    city: "",
+    district: "",
+    phone: ""
+  });
+
+  const token = localStorage.getItem("token");
+
+  // ==========================================
+  // 🔥 LOAD STORE LIST
+  // ==========================================
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  const fetchStores = async () => {
+    const res = await axios.get(
+      "http://localhost:5000/api/stores/admin",
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    setStores(res.data);
+  };
+
+  // ==========================================
+  // 🔥 CREATE / UPDATE
+  // ==========================================
+  const handleSubmit = async () => {
+
+    if (!form.name || !form.address)
+      return alert("Nhập đầy đủ thông tin");
+
+    if (editingId) {
+      await axios.put(
+        `http://localhost:5000/api/stores/${editingId}`,
+        form,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      await axios.post(
+        "http://localhost:5000/api/stores",
+        form,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    setForm({
+      name: "",
+      address: "",
+      city: "",
+      district: "",
+      phone: ""
+    });
+
+    setEditingId(null);
+    fetchStores();
+  };
+
+  // ==========================================
+  // 🔥 EDIT
+  // ==========================================
+  const handleEdit = (store) => {
+    setForm(store);
+    setEditingId(store._id);
+  };
+
+  // ==========================================
+  // 🔥 DELETE (SOFT)
+  // ==========================================
+  const handleDelete = async (id) => {
+    await axios.delete(
+      `http://localhost:5000/api/stores/${id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    fetchStores();
+  };
+
+  return (
+    <div className="admin-store-page">
+
+      <h2>Quản lý chi nhánh</h2>
+
+      {/* FORM */}
+      <div className="store-form">
+
+        <input
+          placeholder="Tên chi nhánh"
+          value={form.name}
+          onChange={(e) =>
+            setForm({ ...form, name: e.target.value })
+          }
+        />
+
+        <input
+          placeholder="Địa chỉ"
+          value={form.address}
+          onChange={(e) =>
+            setForm({ ...form, address: e.target.value })
+          }
+        />
+
+        <input
+          placeholder="Thành phố"
+          value={form.city}
+          onChange={(e) =>
+            setForm({ ...form, city: e.target.value })
+          }
+        />
+
+        <input
+          placeholder="Quận / Huyện"
+          value={form.district}
+          onChange={(e) =>
+            setForm({ ...form, district: e.target.value })
+          }
+        />
+
+        <input
+          placeholder="Số điện thoại"
+          value={form.phone}
+          onChange={(e) =>
+            setForm({ ...form, phone: e.target.value })
+          }
+        />
+
+        <button onClick={handleSubmit}>
+          {editingId ? "Cập nhật" : "Thêm chi nhánh"}
+        </button>
+
+      </div>
+
+      {/* TABLE */}
+      <table className="store-table">
+        <thead>
+          <tr>
+            <th>Tên</th>
+            <th>Địa chỉ</th>
+            <th>Thành phố</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {stores.map(store => (
+            <tr key={store._id}>
+              <td>{store.name}</td>
+              <td>{store.address}</td>
+              <td>{store.city}</td>
+              <td>
+                {store.isActive ? "Hoạt động" : "Tắt"}
+              </td>
+              <td>
+                <button onClick={() => handleEdit(store)}>
+                  Sửa
+                </button>
+
+                <button
+                  className="danger"
+                  onClick={() => handleDelete(store._id)}
+                >
+                  Tắt
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+    </div>
+  );
+}
+
+export default AdminStores;
