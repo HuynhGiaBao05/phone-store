@@ -58,11 +58,12 @@ if (!user.isActive) {
   });
 }
 
-    // Chỉ USER mới cần verify OTP
+    // Chỉ USER mới cần verify
 if (user.role === "USER" && !user.isVerified) {
   return res.status(403).json({
     message: "Please verify your account first"
   });
+
 }
     // 🔒 CHECK IF ACCOUNT LOCKED
     if (user.lockUntil && user.lockUntil > Date.now()) {
