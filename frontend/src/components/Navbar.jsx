@@ -132,28 +132,26 @@ function Navbar() {
             </span>
 
             {/* USER */}
-            <div className="user-menu">
+            {!token ? (
 
-  <FaUserCircle
-    size={28}
-    className="user-icon"
-    onClick={() => {
+              <span
+                className="login-link"
+                onClick={() => navigate("/login")}
+              >
+                Đăng nhập
+              </span>
 
-      // ❌ chưa login → mở modal
-      if (!token) {
-        setShowLoginModal(true);
-      }
+            ) : (
 
-      // ✅ đã login → mở dropdown
-      else {
-        setOpen(!open);
-      }
+              <div className="user-menu">
 
-    }}
-  />
+                <FaUserCircle
+                  size={28}
+                  className="user-icon"
+                  onClick={() => setOpen(!open)}
+                />
 
-  {/* dropdown khi đã login */}
-  {token && open && (
+                {open && (
 
                   <div className="dropdown">
 
@@ -179,7 +177,7 @@ function Navbar() {
 
               </div>
 
-            
+            )}
 
           </div>
 

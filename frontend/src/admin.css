@@ -1,7 +1,8 @@
 .admin-container {
   display: flex;
   min-height: 100vh;
-background: #f3f4f6;   /* sáng nhẹ, hiện đại */}
+  background: #f3f4f6;   /* sáng nhẹ, hiện đại */
+}
 
 /* Sidebar */
 .admin-sidebar {

@@ -32,8 +32,8 @@ function FooterSection() {
           {/* ===== THÔNG TIN SHOP ===== */}
           <div>
             <Link to="/" className="footer-logo">
-    BaoPhone
-  </Link>
+                BaoPhone
+            </Link>
             <p>Gò Vấp, TP.HCM</p>
             <p>Hotline: 0384 078 353</p>
 
