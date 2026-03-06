@@ -8,8 +8,13 @@ function AdminLogin() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const [loading, setLoading] = useState(false);
+
+const handleLogin = async (e) => {
   e.preventDefault();
+
+  if (loading) return; // 🔹 chặn submit nhiều lần
+  setLoading(true);
 
   try {
     const res = await axios.post(
@@ -33,11 +38,15 @@ if (role === "ADMIN") {
 }
 
   } catch (error) {
+
   if (error.response && error.response.data.message) {
     alert(error.response.data.message);
   } else {
     alert("Có lỗi xảy ra");
   }
+
+} finally {
+  setLoading(false); // 🔹 reset loading
 }
 };
 
