@@ -11,14 +11,14 @@ function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
-  const [open, setOpen] = useState(false);
+  const role = localStorage.getItem("role");
 
   // ================= LOAD CATEGORY =================
   useEffect(() => {
@@ -41,9 +41,7 @@ function Navbar() {
 
   // ================= CART =================
   const handleCartClick = () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+    if (!token || role !== "USER") {
       setShowLoginModal(true);
       return;
     }
@@ -55,6 +53,10 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminRole");
+
     navigate("/login");
   };
 
@@ -132,16 +134,7 @@ function Navbar() {
             </span>
 
             {/* USER */}
-            {!token ? (
-
-              <span
-                className="login-link"
-                onClick={() => navigate("/login")}
-              >
-                Đăng nhập
-              </span>
-
-            ) : (
+            {token && role === "USER" ? (
 
               <div className="user-menu">
 
@@ -152,7 +145,6 @@ function Navbar() {
                 />
 
                 {open && (
-
                   <div className="dropdown">
 
                     <p onClick={() => navigate("/profile")}>
@@ -163,19 +155,23 @@ function Navbar() {
                       Đơn hàng của tôi
                     </p>
 
-                    <p onClick={() => navigate("/orders-status")}>
-                      Tình trạng đơn hàng
-                    </p>
-
                     <p onClick={handleLogout}>
                       Đăng xuất
                     </p>
 
                   </div>
-
                 )}
 
               </div>
+
+            ) : (
+
+              <span
+                className="login-link"
+                onClick={() => navigate("/login")}
+              >
+                Đăng nhập
+              </span>
 
             )}
 

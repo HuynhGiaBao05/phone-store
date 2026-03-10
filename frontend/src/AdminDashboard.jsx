@@ -15,8 +15,8 @@ function AdminDashboard() {
     totalRevenue: 0
   });
 
-  // ===== LẤY TOKEN TỪ LOCAL STORAGE =====
-  const token = localStorage.getItem("token");
+  // ===== LẤY TOKEN ADMIN =====
+  const token = localStorage.getItem("adminToken");
 
   useEffect(() => {
 
@@ -24,9 +24,8 @@ function AdminDashboard() {
 
       try {
 
-        // ⚠️ Nếu chưa login thì không gọi API
         if (!token) {
-          console.log("No token found");
+          console.log("No admin token found");
           return;
         }
 
@@ -34,7 +33,7 @@ function AdminDashboard() {
           "http://localhost:5000/api/orders/admin-stats",
           {
             headers: {
-              Authorization: `Bearer ${token}` // ✅ gửi token cho backend
+              Authorization: `Bearer ${token}`
             }
           }
         );
@@ -42,22 +41,23 @@ function AdminDashboard() {
         setStats(res.data);
 
       } catch (error) {
+
         console.error("Error fetching admin stats:", error);
+
       }
 
     };
 
     fetchStats();
 
-  }, [token]); // ⚠️ thêm token vào dependency
+  }, [token]);
 
   return (
+
     <div className="dashboard-container">
 
-      {/* ===== PAGE TITLE ===== */}
       <h1 className="dashboard-title">Admin Dashboard</h1>
 
-      {/* ===== STATISTIC CARDS ===== */}
       <div className="dashboard-cards">
 
         {/* USERS */}
@@ -88,14 +88,16 @@ function AdminDashboard() {
         <div className="dashboard-card purple">
           <h3>Doanh thu</h3>
           <p className="card-number">
-            {Number(stats.totalRevenue || 0)} đ
+            {Number(stats.totalRevenue || 0).toLocaleString()} đ
           </p>
         </div>
 
       </div>
 
     </div>
+
   );
+
 }
 
 export default AdminDashboard;

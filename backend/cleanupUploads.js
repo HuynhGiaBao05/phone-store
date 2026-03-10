@@ -1,44 +1,40 @@
-const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 const Product = require("./models/Product");
 
-// ===== KẾT NỐI DATABASE =====
-mongoose.connect("mongodb://127.0.0.1:27017/phone_store")
-  .then(() => console.log("Connected to DB"))
-  .catch(err => console.log(err));
+mongoose.connect("mongodb://127.0.0.1:27017/your_database");
 
-async function cleanupUploads() {
-  try {
-    // Lấy tất cả image đang tồn tại trong DB
-    const products = await Product.find({}, "image");
+async function cleanup() {
 
-    const imagesInDB = products
-      .map(p => p.image)
-      .filter(img => img); // loại bỏ null
+  const uploadsPath = path.join(__dirname, "uploads");
 
-    console.log("Images in DB:", imagesInDB);
+  const files = fs.readdirSync(uploadsPath);
 
-    // Đường dẫn thư mục uploads
-    const uploadsPath = path.join(__dirname, "uploads");
+  const products = await Product.find();
 
-    const files = fs.readdirSync(uploadsPath);
+  const usedImages = products.map(p => {
+    if (!p.image) return null;
+    return p.image.replace("/uploads/", "");
+  });
 
-    for (const file of files) {
-      if (!imagesInDB.includes(file)) {
-        const filePath = path.join(uploadsPath, file);
+  files.forEach(file => {
 
-        fs.unlinkSync(filePath);
-        console.log("Deleted:", file);
-      }
+    if (!usedImages.includes(file)) {
+
+      const filePath = path.join(uploadsPath, file);
+
+      fs.unlinkSync(filePath);
+
+      console.log("Deleted:", file);
+
     }
 
-    console.log("Cleanup completed!");
-    process.exit();
-  } catch (error) {
-    console.log(error);
-    process.exit();
-  }
+  });
+
+  console.log("Cleanup done");
+  process.exit();
+
 }
 
-cleanupUploads();
+cleanup();

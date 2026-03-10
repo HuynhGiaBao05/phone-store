@@ -12,8 +12,10 @@ function AdminLogin() {
 
 const handleLogin = async (e) => {
   e.preventDefault();
+    console.log("ADMIN LOGIN PAGE");   // 👈 THÊM DÒNG NÀY
 
-  if (loading) return; // 🔹 chặn submit nhiều lần
+
+  if (loading) return;
   setLoading(true);
 
   try {
@@ -22,32 +24,43 @@ const handleLogin = async (e) => {
       { email, password }
     );
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", res.data.role);
+    const role = res.data.role?.toUpperCase();
 
-   const role = res.data.role?.toUpperCase();
+    console.log("ROLE FROM SERVER:", role);
 
-console.log("ROLE FROM SERVER:", role);
+    if (role === "ADMIN") {
 
-if (role === "ADMIN") {
+  localStorage.setItem("adminToken", res.data.token);
+  localStorage.setItem("adminRole", res.data.role);
+
   navigate("/admin-dashboard");
-} else if (role === "STAFF") {
-  navigate("/staff-products");
-} else {
-  navigate("/");
+
 }
+else if (role === "STAFF") {
+
+  localStorage.setItem("adminToken", res.data.token);
+  localStorage.setItem("adminRole", res.data.role);
+
+  navigate("/staff-products");
+
+}
+    else {
+
+      alert("Tài khoản USER không được phép đăng nhập trang quản trị");
+
+    }
 
   } catch (error) {
 
-  if (error.response && error.response.data.message) {
-    alert(error.response.data.message);
-  } else {
-    alert("Có lỗi xảy ra");
-  }
+    if (error.response && error.response.data.message) {
+      alert(error.response.data.message);
+    } else {
+      alert("Có lỗi xảy ra");
+    }
 
-} finally {
-  setLoading(false); // 🔹 reset loading
-}
+  } finally {
+    setLoading(false);
+  }
 };
 
   return (

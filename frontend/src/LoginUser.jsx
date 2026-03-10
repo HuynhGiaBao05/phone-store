@@ -1,14 +1,18 @@
 import { useState } from "react";
 import axios from "axios";
 import "./Auth.css";
+import { useNavigate } from "react-router-dom";
+
 
 function LoginUser() {
 
   const [isActive, setIsActive] = useState(false);
+  const navigate = useNavigate();
 
   // LOGIN
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+
 
   // REGISTER
   const [name, setName] = useState("");
@@ -29,27 +33,37 @@ const [step, setStep] = useState("register");
 const [otp, setOtp] = useState("");
   // ================= LOGIN =================
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
+    console.log("LOGIN USER PAGE"); 
 
-      const res = await axios.post(
-        "http://localhost:5000/api/users/login",
-        {
-          email: loginEmail,
-          password: loginPassword
-        }
-      );
+  try {
+    const res = await axios.post(
+      "http://localhost:5000/api/users/login",
+      {
+        email: loginEmail,
+        password: loginPassword
+      }
+    );
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
+    const role = res.data.role?.toUpperCase();
 
-      alert("Đăng nhập thành công!");
+if (role !== "USER") {
+  alert("Tài khoản này không phải USER");
+  return;
+}
 
-    } catch {
-      alert("Sai tài khoản hoặc mật khẩu");
-    }
-  };
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("role", res.data.role);
+
+    alert("Đăng nhập thành công!");
+
+    window.location.href = "/"; // chuyển về home
+
+  } catch (error) {
+  alert(error.response?.data?.message || "Đăng nhập thất bại");
+}
+};
 
   //=======Send OTP===========//
   const handleSendOtp = async (e) => {

@@ -32,6 +32,9 @@ import Cart from "./Cart";
 import AdminStores from "./AdminStores";
 import LoginUser from "./LoginUser";
 
+import Profile from "./Profile";
+import Orders from "./Orders";
+
 function App() {
   return (
     <>
@@ -51,6 +54,8 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<LoginUser />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/orders" element={<Orders />} />
 
         {/* 👉 Sau này bạn thêm category page, product detail page cũng để trong đây */}
 

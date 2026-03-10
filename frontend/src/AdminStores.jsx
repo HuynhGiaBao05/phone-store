@@ -15,81 +15,141 @@ function AdminStores() {
     phone: ""
   });
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("adminToken");
 
   // ==========================================
-  // 🔥 LOAD STORE LIST
+  // LOAD STORE LIST
   // ==========================================
   useEffect(() => {
     fetchStores();
   }, []);
 
   const fetchStores = async () => {
-    const res = await axios.get(
-      "http://localhost:5000/api/stores/admin",
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
 
-    setStores(res.data);
+    try {
+
+      const res = await axios.get(
+        "http://localhost:5000/api/stores/admin",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setStores(res.data);
+
+    } catch (err) {
+
+      console.log("Lỗi lấy stores:", err);
+
+    }
+
   };
 
   // ==========================================
-  // 🔥 CREATE / UPDATE
+  // CREATE / UPDATE STORE
   // ==========================================
   const handleSubmit = async () => {
 
-    if (!form.name || !form.address)
-      return alert("Nhập đầy đủ thông tin");
-
-    if (editingId) {
-      await axios.put(
-        `http://localhost:5000/api/stores/${editingId}`,
-        form,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } else {
-      await axios.post(
-        "http://localhost:5000/api/stores",
-        form,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    if (!form.name || !form.address) {
+      alert("Nhập đầy đủ thông tin");
+      return;
     }
 
-    setForm({
-      name: "",
-      address: "",
-      city: "",
-      district: "",
-      phone: ""
-    });
+    try {
 
-    setEditingId(null);
-    fetchStores();
+      if (editingId) {
+
+        await axios.put(
+          `http://localhost:5000/api/stores/${editingId}`,
+          form,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+      } else {
+
+        await axios.post(
+          "http://localhost:5000/api/stores",
+          form,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+      }
+
+      setForm({
+        name: "",
+        address: "",
+        city: "",
+        district: "",
+        phone: ""
+      });
+
+      setEditingId(null);
+
+      fetchStores();
+
+    } catch (err) {
+
+      console.log("Lỗi lưu store:", err);
+
+    }
+
   };
 
   // ==========================================
-  // 🔥 EDIT
+  // EDIT STORE
   // ==========================================
   const handleEdit = (store) => {
-    setForm(store);
+
+    setForm({
+      name: store.name || "",
+      address: store.address || "",
+      city: store.city || "",
+      district: store.district || "",
+      phone: store.phone || ""
+    });
+
     setEditingId(store._id);
+
   };
 
   // ==========================================
-  // 🔥 DELETE (SOFT)
+  // DELETE / DISABLE STORE
   // ==========================================
   const handleDelete = async (id) => {
-    await axios.delete(
-      `http://localhost:5000/api/stores/${id}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
 
-    fetchStores();
+    try {
+
+      await axios.delete(
+        `http://localhost:5000/api/stores/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      fetchStores();
+
+    } catch (err) {
+
+      console.log("Lỗi xóa store:", err);
+
+    }
+
   };
 
   return (
+
     <div className="admin-store-page">
 
       <h2>Quản lý chi nhánh</h2>
@@ -145,6 +205,7 @@ function AdminStores() {
 
       {/* TABLE */}
       <table className="store-table">
+
         <thead>
           <tr>
             <th>Tên</th>
@@ -156,15 +217,23 @@ function AdminStores() {
         </thead>
 
         <tbody>
-          {stores.map(store => (
+
+          {stores.map((store) => (
+
             <tr key={store._id}>
+
               <td>{store.name}</td>
+
               <td>{store.address}</td>
+
               <td>{store.city}</td>
+
               <td>
                 {store.isActive ? "Hoạt động" : "Tắt"}
               </td>
+
               <td>
+
                 <button onClick={() => handleEdit(store)}>
                   Sửa
                 </button>
@@ -175,14 +244,21 @@ function AdminStores() {
                 >
                   Tắt
                 </button>
+
               </td>
+
             </tr>
+
           ))}
+
         </tbody>
+
       </table>
 
     </div>
+
   );
+
 }
 
 export default AdminStores;

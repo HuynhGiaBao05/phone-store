@@ -155,6 +155,23 @@ router.put(
         });
       }
 
+      // =====================================================
+// 4️⃣ USER - XEM ĐƠN HÀNG CỦA TÔI
+// =====================================================
+router.get("/my-orders", protect, async (req, res) => {
+  try {
+
+    const orders = await Order.find({ user: req.user._id })
+      .populate("items.product", "name image originalPrice")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
       // =====================================
       // 🔥 TRỪ KHO KHI CONFIRMED
       // =====================================
@@ -381,4 +398,22 @@ router.get(
     }
   }
 );
+
+// =====================================================
+// USER - LẤY ĐƠN HÀNG CỦA MÌNH
+// =====================================================
+router.get("/my-orders", protect, async (req, res) => {
+  try {
+
+    const orders = await Order.find({ user: req.user._id })
+      .populate("items.product", "name image originalPrice")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

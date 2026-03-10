@@ -4,56 +4,57 @@ import "./AdminUsers.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
-
 function AdminUsers() {
 
   // ===============================
   // STATE
   // ===============================
   const [users, setUsers] = useState([]);
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("adminToken");
   const [showModal, setShowModal] = useState(false);
-//search
-const [search, setSearch] = useState("");
-const [currentPage, setCurrentPage] = useState(1);
-const usersPerPage = 5; // mỗi trang 5 user
-// ===============================
-// FILTER USERS
-// ===============================
-const filteredUsers = users.filter((u) =>
-  u.fullName.toLowerCase().includes(search.toLowerCase()) ||
-  u.email.toLowerCase().includes(search.toLowerCase())
-);
 
-// ===============================
-// PAGINATION LOGIC
-// ===============================
-const indexOfLastUser = currentPage * usersPerPage;
-const indexOfFirstUser = indexOfLastUser - usersPerPage;
-
-const currentUsers = filteredUsers.slice(
-  indexOfFirstUser,
-  indexOfLastUser
-);
-
-const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-// ===============================
-// STATE: FORM TẠO USER
-// ===============================
-const [newUser, setNewUser] = useState({
-  fullName: "",
-  email: "",
-  password: "",
-  role: "STAFF"
-});
-
+  // search
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 5;
 
   // ===============================
-  // FETCH ALL USERS
+  // FILTER USERS
+  // ===============================
+  const filteredUsers = users.filter((u) =>
+    u.fullName.toLowerCase().includes(search.toLowerCase()) ||
+    u.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // ===============================
+  // PAGINATION
+  // ===============================
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+
+  const currentUsers = filteredUsers.slice(
+    indexOfFirstUser,
+    indexOfLastUser
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  // ===============================
+  // STATE: FORM TẠO USER
+  // ===============================
+  const [newUser, setNewUser] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    role: "STAFF"
+  });
+
+  // ===============================
+  // FETCH USERS
   // ===============================
   const fetchUsers = async () => {
     try {
+
       const res = await axios.get(
         "http://localhost:5000/api/users/all",
         {
@@ -66,7 +67,9 @@ const [newUser, setNewUser] = useState({
       setUsers(res.data);
 
     } catch (err) {
+
       console.log("Lỗi khi lấy danh sách user:", err);
+
     }
   };
 
@@ -75,10 +78,11 @@ const [newUser, setNewUser] = useState({
   }, []);
 
   // ===============================
-  // KHÓA / MỞ KHÓA USER
+  // TOGGLE ACTIVE
   // ===============================
   const toggleActive = async (id) => {
     try {
+
       await axios.put(
         `http://localhost:5000/api/users/toggle-active/${id}`,
         {},
@@ -92,15 +96,18 @@ const [newUser, setNewUser] = useState({
       fetchUsers();
 
     } catch (err) {
+
       console.log("Lỗi khi khóa/mở khóa:", err);
+
     }
   };
 
   // ===============================
-  // CẬP NHẬT ROLE USER
+  // UPDATE ROLE
   // ===============================
   const updateRole = async (id, newRole) => {
     try {
+
       await axios.put(
         `http://localhost:5000/api/users/update-role/${id}`,
         { role: newRole },
@@ -114,15 +121,18 @@ const [newUser, setNewUser] = useState({
       fetchUsers();
 
     } catch (err) {
+
       console.log("Lỗi khi cập nhật role:", err);
+
     }
   };
 
   // ===============================
-  // XÓA USER
+  // DELETE USER
   // ===============================
   const deleteUser = async (id) => {
     try {
+
       const confirmDelete = window.confirm(
         "Bạn có chắc chắn muốn xóa user này?"
       );
@@ -141,242 +151,183 @@ const [newUser, setNewUser] = useState({
       fetchUsers();
 
     } catch (err) {
+
       console.log("Lỗi khi xóa user:", err);
+
     }
   };
 
-// ===============================
-// FUNCTION: TẠO USER (STAFF / ADMIN)
-// ===============================
-const createUser = async () => {
-  try {
-    await axios.post(
-      "http://localhost:5000/api/users/create",
-      newUser,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+  // ===============================
+  // CREATE USER
+  // ===============================
+  const createUser = async () => {
+
+    try {
+
+      await axios.post(
+        "http://localhost:5000/api/users/create",
+        newUser,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    );
+      );
 
-toast.success("Tạo user thành công 🎉");
+      toast.success("Tạo user thành công 🎉");
 
-    // Reset form
-    setNewUser({
-      fullName: "",
-      email: "",
-      password: "",
-      role: "STAFF"
-    });
+      setNewUser({
+        fullName: "",
+        email: "",
+        password: "",
+        role: "STAFF"
+      });
 
-    // Load lại danh sách
-    fetchUsers();
+      fetchUsers();
+      setShowModal(false);
 
-  } catch (err) {
-  console.log("Lỗi khi tạo user:", err);
-  toast.error("Tạo user thất bại ❌");
-}
-};
+    } catch (err) {
+
+      console.log("Lỗi khi tạo user:", err);
+      toast.error("Tạo user thất bại ❌");
+
+    }
+  };
 
   // ===============================
   // UI
   // ===============================
   return (
-  <div className="admin-users">
+    <div className="admin-users">
 
-    {/* HEADER */}
-    <div className="users-header">
-  <h2 className="page-title">Quản lý người dùng</h2>
+      <div className="users-header">
 
-  <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-    <input
-      type="text"
-      placeholder="🔍 Tìm theo tên hoặc email..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      className="search-input"
-    />
+        <h2 className="page-title">Quản lý người dùng</h2>
 
-    <button
-      className="btn btn-create"
-      onClick={() => setShowModal(true)}
-    >
-      + Tạo nhân viên
-    </button>
-  </div>
-</div>
-   
-    {/* TABLE */}
-    <div className="table-card">
-      <table className="user-table">
-        <thead>
-          <tr>
-            <th>Họ tên</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+        <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
 
-        <tbody>
-          {currentUsers.map((u) => (
-            <tr key={u._id}>
-              <td>{u.fullName}</td>
-              <td>{u.email}</td>
+          <input
+            type="text"
+            placeholder="🔍 Tìm theo tên hoặc email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="search-input"
+          />
 
-              <td>
-                <select
-                  className="role-select"
-                  value={u.role}
-                  onChange={(e) =>
-                    updateRole(u._id, e.target.value)
-                  }
-                >
-                  <option value="USER">USER</option>
-                  <option value="STAFF">STAFF</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
-              </td>
+          <button
+            className="btn btn-create"
+            onClick={() => setShowModal(true)}
+          >
+            + Tạo nhân viên
+          </button>
 
-              <td>
-                {u.isActive ? "Hoạt động" : "Bị khóa"}
-              </td>
+        </div>
 
-              <td className="action-cell">
-                <button
-                  className="btn btn-lock"
-                  onClick={() => toggleActive(u._id)}
-                >
-                  {u.isActive ? "Khóa" : "Mở"}
-                </button>
+      </div>
 
-                <button
-                  className="btn btn-delete"
-                  onClick={() => deleteUser(u._id)}
-                >
-                  Xóa
-                </button>
-              </td>
+      <div className="table-card">
+
+        <table className="user-table">
+
+          <thead>
+            <tr>
+              <th>Họ tên</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
             </tr>
+          </thead>
+
+          <tbody>
+
+            {currentUsers.map((u) => (
+
+              <tr key={u._id}>
+
+                <td>{u.fullName}</td>
+                <td>{u.email}</td>
+
+                <td>
+                  <select
+                    className="role-select"
+                    value={u.role}
+                    onChange={(e) =>
+                      updateRole(u._id, e.target.value)
+                    }
+                  >
+                    <option value="USER">USER</option>
+                    <option value="STAFF">STAFF</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </td>
+
+                <td>
+                  {u.isActive ? "Hoạt động" : "Bị khóa"}
+                </td>
+
+                <td className="action-cell">
+
+                  <button
+                    className="btn btn-lock"
+                    onClick={() => toggleActive(u._id)}
+                  >
+                    {u.isActive ? "Khóa" : "Mở"}
+                  </button>
+
+                  <button
+                    className="btn btn-delete"
+                    onClick={() => deleteUser(u._id)}
+                  >
+                    Xóa
+                  </button>
+
+                </td>
+
+              </tr>
+
+            ))}
+
+          </tbody>
+
+        </table>
+
+        <div className="pagination">
+
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            ◀
+          </button>
+
+          {[...Array(totalPages)].map((_, index) => (
+
+            <button
+              key={index}
+              className={currentPage === index + 1 ? "active" : ""}
+              onClick={() => setCurrentPage(index + 1)}
+            >
+              {index + 1}
+            </button>
+
           ))}
-        </tbody>
 
-      </table>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            ▶
+          </button>
 
-      <div className="pagination">
-  <button
-    disabled={currentPage === 1}
-    onClick={() => setCurrentPage(currentPage - 1)}
-  >
-    ◀
-  </button>
-
-  {[...Array(totalPages)].map((_, index) => (
-    <button
-      key={index}
-      className={currentPage === index + 1 ? "active" : ""}
-      onClick={() => setCurrentPage(index + 1)}
-    >
-      {index + 1}
-    </button>
-  ))}
-
-  <button
-    disabled={currentPage === totalPages}
-    onClick={() => setCurrentPage(currentPage + 1)}
-  >
-    ▶
-  </button>
-</div>
-    </div>
-
-{showModal && (
-  <div className="modal-overlay" onClick={() => setShowModal(false)}>
-    <div
-      className="modal-content"
-      onClick={(e) => e.stopPropagation()}
-    >
-
-      <div className="modal-header">
-        <h3>Tạo nhân viên mới</h3>
-        <span
-          className="modal-close"
-          onClick={() => setShowModal(false)}
-        >
-          ✕
-        </span>
-      </div>
-
-      <div className="modal-body">
-
-        <input
-          type="text"
-          placeholder="Họ tên"
-          value={newUser.fullName}
-          onChange={(e) =>
-            setNewUser({ ...newUser, fullName: e.target.value })
-          }
-        />
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={newUser.email}
-          onChange={(e) =>
-            setNewUser({ ...newUser, email: e.target.value })
-          }
-        />
-
-        <input
-          type="password"
-          placeholder="Mật khẩu"
-          value={newUser.password}
-          onChange={(e) =>
-            setNewUser({ ...newUser, password: e.target.value })
-          }
-        />
-
-        <select
-          value={newUser.role}
-          onChange={(e) =>
-            setNewUser({ ...newUser, role: e.target.value })
-          }
-        >
-          <option value="STAFF">STAFF</option>
-          <option value="ADMIN">ADMIN</option>
-        </select>
+        </div>
 
       </div>
 
-      <div className="modal-actions">
-        <button
-          onClick={createUser}
-          className="btn btn-create"
-        >
-          Tạo
-        </button>
-
-        <button
-          className="btn btn-delete"
-          onClick={() => setShowModal(false)}
-        >
-          Hủy
-        </button>
-      </div>
+      <ToastContainer position="top-right" autoClose={3000} />
 
     </div>
-  </div>
-
-)}
-
-    <ToastContainer position="top-right" autoClose={3000} />
-
-
-  </div>
-);
+  );
 }
-
 
 export default AdminUsers;
