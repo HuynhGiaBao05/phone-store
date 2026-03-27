@@ -1,0 +1,11 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Node / React / npm
+node_modules/
+build/
+dist/
+.env

@@ -1,0 +1,160 @@
+/* ===== CATEGORY PAGE ===== */
+.category-page {
+    padding: 120px 120px;
+    background: #f9fafb; /* nền sáng, nhẹ nhàng */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ===== BANNER ===== */
+.category-banner {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6); /* gradient xanh dương tươi */
+    border-radius: 25px;
+    padding: 60px;
+    text-align: center;
+    margin-bottom: 50px;
+    color: #fff;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+    .category-banner h1 {
+        font-size: 42px;
+        font-weight: 700;
+    }
+
+/* ===== TOOLBAR ===== */
+.category-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.filter-btn {
+    background: #3b82f6;
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: none;
+}
+
+    .filter-btn:hover {
+        background: #2563eb;
+    }
+
+.sort-group button {
+    background: transparent;
+    border: none;
+    color: #4b5563;
+    margin-left: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+    .sort-group button:hover {
+        color: #111827;
+    }
+
+/* ===== GRID ===== */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+/* ===== CARD ===== */
+.category-card {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-decoration: none;
+    color: #111827;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+    .category-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .category-card img {
+        width: 100%;
+        height: 220px;
+        object-fit: contain;
+        margin-bottom: 15px;
+        border-radius: 15px;
+    }
+
+    .category-card h3 {
+        font-size: 17px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+/* ===== PRICE BOX ===== */
+.price-box {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
+}
+
+.new-price {
+    font-weight: 700;
+    color: #ef4444; /* đỏ nổi bật cho giá giảm */
+    font-size: 16px;
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.discount {
+    color: #10b981; /* xanh lá cho badge giảm giá */
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ===== SALE BADGE ===== */
+.sale-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ef4444; /* đỏ nổi bật */
+    color: white;
+    padding: 5px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .category-page {
+        padding: 80px 20px;
+    }
+
+    .category-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}

@@ -1,0 +1,68 @@
+/* ===============================
+   DASHBOARD CONTAINER
+=============================== */
+.dashboard-container {
+  padding: 30px;
+}
+
+/* ===============================
+   TITLE
+=============================== */
+.dashboard-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #1e293b;
+}
+
+/* ===============================
+   CARD GRID
+=============================== */
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+/* ===============================
+   CARD STYLE
+=============================== */
+.dashboard-card {
+  padding: 25px;
+  border-radius: 14px;
+  color: white;
+  transition: 0.3s;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-6px);
+}
+
+/* ===============================
+   CARD COLORS
+=============================== */
+.blue {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.orange {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.purple {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+
+/* ===============================
+   NUMBER STYLE
+=============================== */
+.card-number {
+  font-size: 26px;
+  font-weight: bold;
+  margin-top: 10px;
+}
