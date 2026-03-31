@@ -4,16 +4,17 @@
     background: #f9fafb; /* nền sáng, nhẹ nhàng */
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #111827; /* chữ đen toàn trang */
 }
 
 /* ===== BANNER ===== */
 .category-banner {
-    background: linear-gradient(135deg, #60a5fa, #3b82f6); /* gradient xanh dương tươi */
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db); /* xám nhẹ kiểu iPhone */
+    color: #111827; /* CHỮ ĐEN */
     border-radius: 25px;
     padding: 60px;
     text-align: center;
     margin-bottom: 50px;
-    color: #fff;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
@@ -31,8 +32,8 @@
 }
 
 .filter-btn {
-    background: #3b82f6;
-    color: #fff;
+    background: #e5e7eb; /* xám */
+    color: #111827; /* chữ đen */
     padding: 10px 22px;
     border-radius: 25px;
     cursor: pointer;
@@ -42,13 +43,13 @@
 }
 
     .filter-btn:hover {
-        background: #2563eb;
+        background: #d1d5db; /* xám đậm hơn */
     }
 
 .sort-group button {
     background: transparent;
     border: none;
-    color: #4b5563;
+    color: #111827; /* chữ đen */
     margin-left: 15px;
     cursor: pointer;
     font-weight: 500;
@@ -56,7 +57,7 @@
 }
 
     .sort-group button:hover {
-        color: #111827;
+        color: #000; /* đậm hơn khi hover */
     }
 
 /* ===== GRID ===== */
@@ -158,3 +159,29 @@
         gap: 20px;
     }
 }
+
+/* ===== PAGINATION ===== */
+.pagination {
+    margin-top: 40px;
+    text-align: center;
+}
+
+    .pagination button {
+        margin: 0 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: white;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+        .pagination button:hover {
+            background: #111;
+            color: #fff;
+        }
+
+    .pagination .active {
+        background: #111;
+        color: #fff;
+    }

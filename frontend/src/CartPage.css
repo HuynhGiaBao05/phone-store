@@ -21,11 +21,11 @@ body {
 /* ================= CART ITEM ================= */
 .cart-item {
     display: grid;
-    grid-template-columns: 24px 80px 1fr 30px; /* nhỏ gọn hơn */
+    grid-template-columns: 24px 80px 1fr 30px;
     gap: 15px;
     background: white;
-    padding: 18px; /* giảm padding */
-    border-radius: 15px; /* nhẹ nhàng hơn */
+    padding: 18px;
+    border-radius: 15px;
     margin-bottom: 15px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.04);
 }
@@ -46,7 +46,7 @@ body {
     .check-circle::after {
         content: "✓";
         color: white;
-        font-size: 12px; /* nhỏ hơn */
+        font-size: 12px;
         transform: scale(0);
         transition: transform 0.2s ease;
     }
@@ -66,7 +66,7 @@ body {
 
 /* ================= IMAGE ================= */
 .cart-item img {
-    width: 80px; /* nhỏ hơn */
+    width: 80px;
     height: 80px;
     object-fit: cover;
     border-radius: 8px;
@@ -75,7 +75,7 @@ body {
 /* ================= INFO ================= */
 .item-info h4 {
     margin: 0 0 6px 0;
-    font-size: 15px; /* nhỏ hơn */
+    font-size: 15px;
     font-weight: 500;
 }
 
@@ -96,7 +96,7 @@ body {
     font-size: 13px;
 }
 
-/* ================= QTY NÚT + / - ================= */
+/* ================= QTY ================= */
 .qty {
     display: flex;
     gap: 8px;
@@ -107,11 +107,11 @@ body {
         width: 28px;
         height: 28px;
         border: none;
-        background: #e60012; /* đỏ nổi bật */
+        background: #e60012;
         color: white;
         border-radius: 6px;
         cursor: pointer;
-        font-size: 16px; /* lớn hơn */
+        font-size: 16px;
         font-weight: bold;
         display: flex;
         align-items: center;
@@ -120,7 +120,7 @@ body {
     }
 
         .qty button:hover {
-            background: #c8000f; /* đỏ đậm khi hover */
+            background: #c8000f;
         }
 
 /* ================= PROMO ================= */
@@ -136,12 +136,12 @@ body {
         padding-left: 16px;
     }
 
-/* ================= NÚT XÓA ================= */
+/* ================= DELETE BUTTON ================= */
 .delete-btn {
     width: 28px;
     height: 28px;
     border: none;
-    background: #f44336; /* đỏ tươi nổi bật */
+    background: #f44336;
     color: white;
     border-radius: 50%;
     cursor: pointer;
@@ -154,7 +154,7 @@ body {
 }
 
     .delete-btn:hover {
-        background: #d32f2f; /* đỏ đậm khi hover */
+        background: #d32f2f;
         transform: scale(1.1);
     }
 
@@ -197,7 +197,7 @@ body {
         background: #c8000f;
     }
 
-/* ================= SELECT ALL & REMOVE ================= */
+/* ================= SELECT ALL ================= */
 .select-all-row {
     display: flex;
     align-items: center;
@@ -213,4 +213,32 @@ body {
     cursor: pointer;
     font-weight: 500;
     font-size: 14px;
+}
+
+/* =======================================================
+   🛒 CART ICON BADGE (GIỐNG THẾ GIỚI DI ĐỘNG)
+======================================================= */
+
+.cart-icon {
+    position: relative;
+    display: inline-block;
+}
+
+.cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: #ff3b30;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 0 0 2px #fff;
 }

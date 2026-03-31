@@ -4,125 +4,181 @@ import "./Orders.css";
 
 function Orders() {
 
-  const [orders,setOrders] = useState([]);
+    const [orders, setOrders] = useState([]);
 
-  useEffect(()=>{
+    const fetchOrders = () => {
+        const token = localStorage.getItem("token");
 
-    const token = localStorage.getItem("token");
+        axios.get(
+            "http://localhost:5000/api/orders/my-orders",
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        )
+            .then(res => {
+                console.log("ORDERS:", res.data);
+                setOrders(res.data);
+            })
+            .catch(err => {
+                console.error("Lỗi lấy đơn hàng:", err);
+            });
+    };
 
-    axios.get(
-      "http://localhost:5000/api/orders/my-orders",
-      {
-        headers:{
-          Authorization:`Bearer ${token}`
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
+    const steps = ["PENDING", "CONFIRMED", "SHIPPING", "DELIVERED"];
+
+    // 🔥 FIX IMAGE
+    const getImageUrl = (image) => {
+        if (!image) return "/no-image.png";
+        if (image.startsWith("http")) return image;
+        return `http://localhost:5000/uploads/${image}`;
+    };
+
+    // 🔥 HỦY ĐƠN
+    const cancelOrder = async (orderId) => {
+        const token = localStorage.getItem("token");
+
+        if (!window.confirm("Bạn có chắc muốn hủy đơn này?")) return;
+
+        try {
+            await axios.put(
+                `http://localhost:5000/api/orders/cancel/${orderId}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            alert("Đã hủy đơn hàng");
+            fetchOrders(); // reload lại
+
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Lỗi hủy đơn");
         }
-      }
-    )
-    .then(res=>{
-      setOrders(res.data);
-    });
+    };
 
-  },[]);
+    return (
 
-  const steps = ["PENDING","CONFIRMED","SHIPPING","DELIVERED"];
+        <div className="orders-page">
 
-  return(
+            <h2 className="orders-title">Đơn hàng của tôi</h2>
 
-    <div className="orders-page">
+            {orders.map(order => {
 
-      <h2>Đơn hàng của tôi</h2>
+                const currentStep = steps.indexOf(order.status);
 
-      {orders.map(order=>{
+                return (
 
-        const currentStep = steps.indexOf(order.status);
+                    <div className="order-card" key={order._id}>
 
-        return(
+                        <div className="order-header">
 
-          <div className="order-card" key={order._id}>
+                            <div>
+                                <b>Mã đơn:</b> {order._id}
+                            </div>
 
-            <div className="order-header">
+                            {/* 🔥 STATUS CLASS */}
+                            <div className={`order-status ${order.status}`}>
+                                {order.status}
+                            </div>
 
-              <div>
-                <b>Mã đơn:</b> {order._id}
-              </div>
+                        </div>
 
-              <div className="status">
-                {order.status}
-              </div>
+                        {/* PRODUCTS */}
+                        <div className="order-items">
+                            {order.items.map(item => (
+                                <div className="order-item" key={item._id}>
 
-            </div>
+                                    <img
+                                        src={getImageUrl(item.product?.image)}
+                                        alt={item.product?.name || "product"}
+                                        onError={(e) => {
+                                            e.target.src = "/no-image.png";
+                                        }}
+                                    />
 
-            {/* PRODUCTS */}
+                                    <div className="order-info">
 
-            {order.items.map(item=>(
-              <div className="order-item" key={item._id}>
+                                        <div className="product-name">
+                                            {item.product?.name}
+                                        </div>
 
-                <img src={item.product?.image} />
+                                        <div className="product-price">
+                                            {item.quantity} x {item.price.toLocaleString()} đ
+                                        </div>
 
-                <div>
+                                    </div>
 
-                  <div className="product-name">
-                    {item.product?.name}
-                  </div>
+                                </div>
+                            ))}
+                        </div>
 
-                  <div className="product-price">
-                    {item.quantity} x {item.price.toLocaleString()} đ
-                  </div>
+                        {/* TIMELINE */}
+                        <div className="timeline">
 
-                </div>
+                            {steps.map((step, index) => {
 
-              </div>
-            ))}
+                                const active = index <= currentStep;
 
-            {/* TIMELINE */}
+                                return (
 
-            <div className="timeline">
+                                    <div className="timeline-step" key={step}>
 
-              {steps.map((step,index)=>{
+                                        <div className={`circle ${active ? "active" : ""}`}>
+                                            {index + 1}
+                                        </div>
 
-                const active = index <= currentStep;
+                                        <div className={`label ${active ? "active" : ""}`}>
+                                            {step}
+                                        </div>
 
-                return(
+                                    </div>
 
-                  <div className="timeline-step" key={step}>
+                                );
 
-                    <div className={`circle ${active?"active":""}`}>
-                      {index+1}
+                            })}
+
+                        </div>
+
+                        {/* FOOTER */}
+                        <div className="order-footer">
+                            Tổng tiền:
+                            <span>{order.totalAmount.toLocaleString()} đ</span>
+                        </div>
+
+                        {/* 🔥 NÚT HỦY */}
+                        {order.status === "PENDING" && (
+                            <button
+                                className="cancel-btn"
+                                onClick={() => cancelOrder(order._id)}
+                            >
+                                Hủy đơn
+                            </button>
+                        )}
+
                     </div>
-
-                    <div className={`label ${active?"active":""}`}>
-                      {step}
-                    </div>
-
-                  </div>
 
                 );
 
-              })}
+            })}
 
-            </div>
+            {orders.length === 0 && (
+                <div className="no-orders">
+                    Bạn chưa có đơn hàng nào
+                </div>
+            )}
 
-            <div className="order-total">
-
-              Tổng tiền: {order.totalAmount.toLocaleString()} đ
-
-            </div>
-
-          </div>
-
-        )
-
-      })}
-
-      {orders.length===0 &&(
-        <div className="no-orders">
-          Bạn chưa có đơn hàng nào
         </div>
-      )}
 
-    </div>
-
-  )
+    );
 
 }
 

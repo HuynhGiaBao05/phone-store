@@ -2,11 +2,7 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
     {
-        name: {
-            type: String,
-            required: true,
-            trim: true
-        },
+        name: { type: String, required: true, trim: true },
 
         category: {
             type: mongoose.Schema.Types.ObjectId,
@@ -26,7 +22,6 @@ const productSchema = new mongoose.Schema(
             min: 0
         },
 
-        // ✅ FIX Ở ĐÂY
         discount: {
             type: Number,
             default: 0,
@@ -41,30 +36,41 @@ const productSchema = new mongoose.Schema(
             min: 0
         },
 
-        description: {
-            type: String,
-            default: ""
+        // 🔥 NEW: khóa sản phẩm (admin / system)
+        isLocked: {
+            type: Boolean,
+            default: false
         },
 
-        promotion: {
-            type: String,
-            default: ""
-        },
+        description: { type: String, default: "" },
+        promotion: { type: String, default: "" },
 
         promoEndDate: {
             type: Date,
             default: null
         },
 
-        image: {
-            type: String,
-            default: null
-        },
+        image: { type: String, default: null },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true }
+    }
 );
 
-// AUTO CLEAR promoEndDate
+// 🔥 virtual: hết hàng
+productSchema.virtual("isOutOfStock").get(function () {
+    return this.stock <= 0;
+});
+
+// 🔥 virtual: còn hàng text
+productSchema.virtual("stockText").get(function () {
+    if (this.stock <= 0) return "Hết hàng";
+    return `Còn ${this.stock} sản phẩm`;
+});
+
+// auto promo
 productSchema.pre("save", function (next) {
     if (this.discount === 0) {
         this.promoEndDate = null;

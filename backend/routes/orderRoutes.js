@@ -10,89 +10,88 @@ const Product = require("../models/Product");
 // 1️⃣ TẠO ĐƠN HÀNG (USER đặt)
 // =====================================================
 router.post("/", protect, async (req, res) => {
-  try {
+    try {
 
-    const { items } = req.body;
+        const { items } = req.body;
 
-    // ===============================
-    // 🔥 VALIDATE GIỎ HÀNG
-    // ===============================
-    if (!items || items.length === 0) {
-      return res.status(400).json({
-        message: "Giỏ hàng trống",
-      });
-    }
-
-    let totalAmount = 0;
-    const orderItems = [];
-
-    // =====================================================
-    // 🔥 KHÔNG TIN FRONTEND → TÍNH LẠI TỪ DATABASE
-    // =====================================================
-    for (let item of items) {
-
-      const product = await Product.findById(item.product);
-
-      if (!product) {
-        return res.status(404).json({
-          message: "Sản phẩm không tồn tại",
-        });
-      }
-
-      // ===============================
-      // 🔥 CHECK TỒN KHO
-      // ===============================
-      if (product.stock < item.quantity) {
-        return res.status(400).json({
-          message: `Không đủ tồn kho cho ${product.name}`,
-        });
-      }
-
-      // ===============================
-      // 🔥 TÍNH GIÁ THỰC TẾ (CÓ GIẢM GIÁ)
-      // NOTE: lưu giá tại thời điểm mua
-      // ===============================
-      const finalPrice =
-        product.discount > 0
-          ? product.originalPrice -
-            (product.originalPrice * product.discount) / 100
-          : product.originalPrice;
-
-      totalAmount += finalPrice * item.quantity;
-
-      orderItems.push({
-        product: product._id,
-        quantity: item.quantity,
-        price: finalPrice
-      });
-    }
-
-    // ===============================
-    // 🔥 TẠO ORDER
-    // ===============================
-    const order = new Order({
-      user: req.user._id,
-      items: orderItems,
-      totalAmount,
-      status: "PENDING",
-      statusHistory: [
-        {
-          status: "PENDING",
-          changedBy: req.user._id
+        if (!items || items.length === 0) {
+            return res.status(400).json({
+                message: "Giỏ hàng trống",
+            });
         }
-      ]
-    });
 
-    await order.save();
+        let totalAmount = 0;
+        const orderItems = [];
 
-    res.json({
-      message: "Order created successfully",
-      order,
-    });
+        for (let item of items) {
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+            // ❌ FIX: chống crash nếu frontend gửi sai
+            if (!item.product) {
+                return res.status(400).json({
+                    message: "Dữ liệu sản phẩm không hợp lệ",
+                });
+            }
+
+            const product = await Product.findById(item.product);
+
+            if (!product) {
+                return res.status(404).json({
+                    message: "Sản phẩm không tồn tại",
+                });
+            }
+
+            // 🔥 FIX: bỏ isActive (tránh lỗi schema)
+            if (product.stock <= 0) {
+                return res.status(400).json({
+                    message: `${product.name} đã hết hàng`,
+                });
+            }
+
+            // 🔥 FIX: không cho vượt stock
+            if (product.stock < item.quantity) {
+                return res.status(400).json({
+                    message: `Không đủ tồn kho cho ${product.name}`,
+                });
+            }
+
+            const finalPrice =
+                product.discount > 0
+                    ? product.originalPrice -
+                    (product.originalPrice * product.discount) / 100
+                    : product.originalPrice;
+
+            totalAmount += finalPrice * item.quantity;
+
+            orderItems.push({
+                product: product._id,
+                quantity: item.quantity,
+                price: finalPrice
+            });
+        }
+
+        const order = new Order({
+            user: req.user._id,
+            items: orderItems,
+            totalAmount,
+            status: "PENDING",
+            statusHistory: [
+                {
+                    status: "PENDING",
+                    changedBy: req.user._id
+                }
+            ]
+        });
+
+        await order.save();
+
+        res.json({
+            message: "Order created successfully",
+            order,
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 
@@ -100,22 +99,22 @@ router.post("/", protect, async (req, res) => {
 // 2️⃣ STAFF & ADMIN xem danh sách đơn
 // =====================================================
 router.get(
-  "/",
-  protect,
-  authorizeRoles("STAFF", "ADMIN"),
-  async (req, res) => {
-    try {
+    "/",
+    protect,
+    authorizeRoles("STAFF", "ADMIN"),
+    async (req, res) => {
+        try {
 
-      const orders = await Order.find()
-        .populate("user", "fullName email")
-        .populate("items.product", "name originalPrice discount stock");
+            const orders = await Order.find()
+                .populate("user", "fullName email")
+                .populate("items.product", "name originalPrice discount stock image");
 
-      res.json(orders);
+            res.json(orders);
 
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
     }
-  }
 );
 
 
@@ -123,297 +122,243 @@ router.get(
 // 3️⃣ CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG
 // =====================================================
 router.put(
-  "/:id/status",
-  protect,
-  authorizeRoles("STAFF", "ADMIN"),
-  async (req, res) => {
-    try {
+    "/:id/status",
+    protect,
+    authorizeRoles("STAFF", "ADMIN"),
+    async (req, res) => {
+        try {
 
-      const { status } = req.body;
+            const { status } = req.body;
 
-      const order = await Order.findById(req.params.id)
-        .populate("items.product");
+            const order = await Order.findById(req.params.id)
+                .populate("items.product");
 
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
+            if (!order) {
+                return res.status(404).json({ message: "Order not found" });
+            }
 
-      // =====================================
-      // 🔥 FLOW CONTROL
-      // =====================================
-      const validTransitions = {
-        PENDING: ["CONFIRMED", "CANCELLED"],
-        CONFIRMED: ["SHIPPING", "CANCELLED"],
-        SHIPPING: ["DELIVERED", "CANCELLED"],
-        DELIVERED: [],
-        CANCELLED: []
-      };
+            const validTransitions = {
+                PENDING: ["CONFIRMED", "CANCELLED"],
+                CONFIRMED: ["SHIPPING", "CANCELLED"],
+                SHIPPING: ["DELIVERED", "CANCELLED"],
+                DELIVERED: [],
+                CANCELLED: []
+            };
 
-      if (!validTransitions[order.status].includes(status)) {
-        return res.status(400).json({
-          message: `Không thể chuyển từ ${order.status} sang ${status}`
-        });
-      }
+            if (!validTransitions[order.status].includes(status)) {
+                return res.status(400).json({
+                    message: `Không thể chuyển từ ${order.status} sang ${status}`
+                });
+            }
 
-      // =====================================================
+            // =====================================================
+            // 🔥 CONFIRMED -> TRỪ KHO
+            // =====================================================
+            if (status === "CONFIRMED") {
+
+                for (let item of order.items) {
+
+                    const product = await Product.findById(item.product._id);
+
+                    if (!product) {
+                        return res.status(404).json({
+                            message: "Product not found"
+                        });
+                    }
+
+                    if (product.stock < item.quantity) {
+                        return res.status(400).json({
+                            message: `Không đủ tồn kho cho ${product.name}`
+                        });
+                    }
+
+                    product.stock -= item.quantity;
+
+                    await product.save();
+                }
+            }
+
+            // =====================================================
+            // 🔥 CANCEL -> HOÀN KHO
+            // =====================================================
+            if (
+                status === "CANCELLED" &&
+                order.status !== "DELIVERED" &&
+                order.status !== "CANCELLED"
+            ) {
+                for (let item of order.items) {
+
+                    const product = await Product.findById(item.product._id);
+
+                    product.stock += item.quantity;
+
+                    await product.save();
+                }
+            }
+
+            order.statusHistory.push({
+                status,
+                changedBy: req.user._id
+            });
+
+            order.status = status;
+            await order.save();
+
+            res.json({ message: "Order status updated successfully" });
+
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+);
+
+
+// =====================================================
 // 4️⃣ USER - XEM ĐƠN HÀNG CỦA TÔI
 // =====================================================
 router.get("/my-orders", protect, async (req, res) => {
-  try {
+    try {
 
-    const orders = await Order.find({ user: req.user._id })
-      .populate("items.product", "name image originalPrice")
-      .sort({ createdAt: -1 });
+        const orders = await Order.find({ user: req.user._id })
+            .populate("items.product", "name image originalPrice")
+            .sort({ createdAt: -1 });
 
-    res.json(orders);
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-      // =====================================
-      // 🔥 TRỪ KHO KHI CONFIRMED
-      // =====================================
-      if (status === "CONFIRMED") {
-
-        for (let item of order.items) {
-
-          if (item.product.stock < item.quantity) {
-            return res.status(400).json({
-              message: `Không đủ tồn kho cho ${item.product.name}`
-            });
-          }
-
-          item.product.stock -= item.quantity;
-          await item.product.save();
-        }
-      }
-
-      // =====================================
-      // 🔥 HOÀN KHO (CHỈ NẾU CHƯA GIAO)
-      // =====================================
-      if (
-        status === "CANCELLED" &&
-        order.status !== "DELIVERED" &&
-        order.status !== "CANCELLED"
-      ) {
-
-        for (let item of order.items) {
-          item.product.stock += item.quantity;
-          await item.product.save();
-        }
-      }
-
-      // =====================================
-      // 🔥 LƯU LỊCH SỬ
-      // =====================================
-      order.statusHistory.push({
-        status,
-        changedBy: req.user._id
-      });
-
-      order.status = status;
-      await order.save();
-
-      res.json({ message: "Order status updated successfully" });
+        res.json(orders);
 
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
-  }
-);
+});
 
 
 // =====================================================
-// ADMIN - DASHBOARD STATS (TỐI ƯU)
+// 5️⃣ USER - HỦY ĐƠN HÀNG
 // =====================================================
-router.get(
-  "/admin-stats",
-  protect,
-  authorizeRoles("ADMIN"),
-  async (req, res) => {
+router.put("/cancel/:id", protect, async (req, res) => {
     try {
 
-      const totalUsers = await User.countDocuments();
-      const totalProducts = await Product.countDocuments();
-      const totalOrders = await Order.countDocuments();
+        const order = await Order.findById(req.params.id);
 
-      // 🔥 TÍNH DOANH THU BẰNG AGGREGATE
-      const revenueData = await Order.aggregate([
-        { $match: { status: "DELIVERED" } },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: "$totalAmount" }
-          }
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
         }
-      ]);
 
-      const totalRevenue = revenueData[0]?.totalRevenue || 0;
+        if (order.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: "Không có quyền" });
+        }
 
-      res.json({
-        totalUsers,
-        totalProducts,
-        totalOrders,
-        totalRevenue
-      });
+        if (order.status !== "PENDING") {
+            return res.status(400).json({
+                message: "Chỉ có thể hủy khi đơn đang PENDING"
+            });
+        }
 
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+        order.status = "CANCELLED";
+
+        order.statusHistory.push({
+            status: "CANCELLED",
+            changedBy: req.user._id
+        });
+
+        await order.save();
+
+        res.json({ message: "Đã hủy đơn hàng thành công" });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-  }
+});
+
+
+// =====================================================
+// 6️⃣ ADMIN - DASHBOARD STATS
+// =====================================================
+router.get(
+    "/admin-stats",
+    protect,
+    authorizeRoles("ADMIN"),
+    async (req, res) => {
+        try {
+
+            const totalUsers = await User.countDocuments();
+            const totalProducts = await Product.countDocuments();
+            const totalOrders = await Order.countDocuments();
+
+            const revenueData = await Order.aggregate([
+                { $match: { status: "DELIVERED" } },
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: { $sum: "$totalAmount" }
+                    }
+                }
+            ]);
+
+            const totalRevenue = revenueData[0]?.totalRevenue || 0;
+
+            res.json({
+                totalUsers,
+                totalProducts,
+                totalOrders,
+                totalRevenue
+            });
+
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    }
 );
 
 
 // =====================================================
-// PUBLIC - TOP 5 BÁN CHẠY
+// 7️⃣ TOP PRODUCTS HOME
 // =====================================================
 router.get("/top-products-home", async (req, res) => {
-  try {
-
-    const topProducts = await Order.aggregate([
-      { $match: { status: "DELIVERED" } },
-      { $unwind: "$items" },
-      {
-        $group: {
-          _id: "$items.product",
-          totalSold: { $sum: "$items.quantity" }
-        }
-      },
-      { $sort: { totalSold: -1 } },
-      { $limit: 5 }
-    ]);
-
-    const productIds = topProducts.map(p => p._id);
-
-    const products = await Product.find({
-      _id: { $in: productIds }
-    });
-
-    const result = topProducts.map(tp => {
-
-      const product = products.find(
-        p => p._id.toString() === tp._id.toString()
-      );
-
-      if (!product) return null;
-
-      // 🔥 TÍNH LẠI GIÁ HIỆN TẠI
-      const finalPrice =
-        product.discount > 0
-          ? product.originalPrice -
-            (product.originalPrice * product.discount) / 100
-          : product.originalPrice;
-
-      return {
-        _id: product._id,
-        name: product.name,
-        image: product.image,
-        price: finalPrice,
-        totalSold: tp.totalSold
-      };
-    });
-
-    res.json(result.filter(Boolean));
-
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ==========================================
-// ADMIN - DOANH THU THEO THÁNG
-// ==========================================
-router.get(
-  "/revenue-by-month",
-  protect,
-  authorizeRoles("ADMIN"),
-  async (req, res) => {
     try {
 
-      const year = parseInt(req.query.year);
+        const topProducts = await Order.aggregate([
+            { $unwind: "$items" },
+            {
+                $group: {
+                    _id: "$items.product",
+                    totalSold: { $sum: "$items.quantity" }
+                }
+            },
+            { $sort: { totalSold: -1 } },
+            { $limit: 10 }
+        ]);
 
-      const revenue = await Order.aggregate([
-        {
-          $match: {
-            status: "DELIVERED",
-            createdAt: {
-              $gte: new Date(`${year}-01-01`),
-              $lte: new Date(`${year}-12-31`)
-            }
-          }
-        },
-        {
-          $group: {
-            _id: { $month: "$createdAt" },
-            total: { $sum: "$totalAmount" }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
+        const products = await Product.find({
+            _id: { $in: topProducts.map(p => p._id) }
+        }).lean();
 
-      res.json(revenue);
+        const result = topProducts.map(tp => {
 
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+            const product = products.find(
+                p => p._id.toString() === tp._id.toString()
+            );
+
+            if (!product) return null;
+
+            const finalPrice =
+                product.discount > 0
+                    ? product.originalPrice -
+                    (product.originalPrice * product.discount) / 100
+                    : product.originalPrice;
+
+            return {
+                ...product,
+                price: finalPrice,
+                totalSold: tp.totalSold
+            };
+        }).filter(Boolean);
+
+        res.json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-  }
-);
-
-// ==========================================
-// ADMIN - SỐ ĐƠN THEO THÁNG
-// ==========================================
-router.get(
-  "/orders-by-month",
-  protect,
-  authorizeRoles("ADMIN"),
-  async (req, res) => {
-    try {
-
-      const year = parseInt(req.query.year);
-
-      const orders = await Order.aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: new Date(`${year}-01-01`),
-              $lte: new Date(`${year}-12-31`)
-            }
-          }
-        },
-        {
-          $group: {
-            _id: { $month: "$createdAt" },
-            count: { $sum: 1 }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
-
-      res.json(orders);
-
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  }
-);
-
-// =====================================================
-// USER - LẤY ĐƠN HÀNG CỦA MÌNH
-// =====================================================
-router.get("/my-orders", protect, async (req, res) => {
-  try {
-
-    const orders = await Order.find({ user: req.user._id })
-      .populate("items.product", "name image originalPrice")
-      .sort({ createdAt: -1 });
-
-    res.json(orders);
-
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 });
+
 
 module.exports = router;

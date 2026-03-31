@@ -38,6 +38,7 @@ import Orders from "./Orders";
 import MfaWait from "./MfaWait";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ProductListPage from "./ProductListPage"; // 👈 thêm trên đầu file
 
 function App() {
   return (
@@ -55,6 +56,9 @@ function App() {
         <Route path="/warranty" element={<Warranty />} />
         <Route path="/return-policy" element={<ReturnPolicy />} />
         <Route path="/contact" element={<Contact />} />
+
+        <Route path="/featured" element={<ProductListPage type="featured" />} />
+        <Route path="/sale" element={<ProductListPage type="sale" />} />
         <Route path="/category/:slug" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/checkout" element={<Checkout />} />

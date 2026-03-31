@@ -12,30 +12,20 @@ function CartPage() {
     const token = localStorage.getItem("token");
 
     // ====================================================
-    // HELPER: GET PRODUCT PRICE
-    // ====================================================
-    // ====================================================
-    // HELPER: GET PRODUCT PRICE
+    // FIXED: GET PRODUCT PRICE (DISCOUNT %)
     // ====================================================
     const getPrice = (product) => {
         if (!product) return 0;
 
-        // Nếu backend trả giá là number hoặc string
-        const price = Number(product.price ?? 0);
+        const originalPrice = Number(product.originalPrice || 0);
+        const discount = Number(product.discount || 0);
 
-        // Chỉ dùng discount nếu thực sự > 0 và có giá hợp lệ
-        const discount = Number(product.discount ?? 0);
-
-        // Giá cuối cùng
-        if (discount > 0 && price > discount) {
-            return price - discount;
-        } else if (price > 0) {
-            return price;
-        } else if (product.originalPrice > 0) {
-            return Number(product.originalPrice);
-        } else {
-            return 0;
+        // discount là %
+        if (discount > 0 && discount <= 100) {
+            return originalPrice - (originalPrice * discount) / 100;
         }
+
+        return originalPrice;
     };
 
     // ====================================================
@@ -53,6 +43,7 @@ function CartPage() {
                     }
                 }
             );
+
             console.log("Cart data:", res.data.items);
             setCart(res.data.items || []);
         } catch (err) {
@@ -196,8 +187,8 @@ function CartPage() {
                 <div className="select-all-row">
                     <div
                         className={`check-circle ${selectedItems.length === cart.filter(i => i.product).length
-                            ? "checked"
-                            : ""
+                                ? "checked"
+                                : ""
                             }`}
                         onClick={handleSelectAll}
                     ></div>
@@ -217,14 +208,15 @@ function CartPage() {
                 if (!item.product) return null;
 
                 const productId = item.product._id;
+                const finalPrice = getPrice(item.product);
 
                 return (
                     <div key={productId} className="cart-item">
 
                         <div
                             className={`check-circle ${selectedItems.includes(productId)
-                                ? "checked"
-                                : ""
+                                    ? "checked"
+                                    : ""
                                 }`}
                             onClick={() => toggleSelect(productId)}
                         ></div>
@@ -241,8 +233,14 @@ function CartPage() {
 
                             <div className="price-box">
                                 <span className="new-price">
-                                    {getPrice(item.product).toLocaleString()}đ
+                                    {finalPrice.toLocaleString()}đ
                                 </span>
+
+                                {item.product?.discount > 0 && (
+                                    <span className="old-price">
+                                        {item.product.originalPrice.toLocaleString()}đ
+                                    </span>
+                                )}
                             </div>
 
                             <div className="qty">

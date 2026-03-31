@@ -4,7 +4,15 @@ import "./Checkout.css";
 
 function Checkout() {
     const [step, setStep] = useState(1);
-    const [cart, setCart] = useState([]);
+
+    const [cart] = useState(() => {
+        try {
+            return JSON.parse(sessionStorage.getItem("checkoutItems")) || [];
+        } catch {
+            return [];
+        }
+    });
+
     const [stores, setStores] = useState([]);
 
     const [customer, setCustomer] = useState({
@@ -22,36 +30,30 @@ function Checkout() {
 
     const API_BASE = "http://localhost:5000";
 
-    // ==========================
-    // HELPER: GET PRODUCT PRICE
-    // ==========================
+    // ====================================================
+    // FIXED PRICE (discount % + originalPrice)
+    // ====================================================
     const getPrice = (product) => {
         if (!product) return 0;
-        const price = Number(product.price ?? 0);
-        const discount = Number(product.discount ?? 0);
-        if (discount > 0 && price > discount) return price - discount;
-        else if (price > 0) return price;
-        else if (product.originalPrice > 0) return Number(product.originalPrice);
-        else return 0;
+
+        const originalPrice = Number(product.originalPrice || 0);
+        const discount = Number(product.discount || 0);
+
+        if (discount > 0 && discount <= 100) {
+            return originalPrice - (originalPrice * discount) / 100;
+        }
+
+        return originalPrice;
     };
 
-    // ==========================
-    // HELPER: GET FULL IMAGE URL
-    // ==========================
     const getImageUrl = (img) => {
-        if (!img) return "/placeholder.png"; // ảnh dự phòng
+        if (!img) return "/placeholder.png";
         return img.startsWith("http") ? img : `${API_BASE}/uploads/${img}`;
     };
 
-    // Load checkout items
-    useEffect(() => {
-        const items = JSON.parse(sessionStorage.getItem("checkoutItems")) || [];
-        setTimeout(() => {
-            setCart(items);
-        }, 0);
-    }, []);
-
-    // Load stores
+    // ====================================================
+    // LOAD STORES
+    // ====================================================
     useEffect(() => {
         const loadStores = async () => {
             try {
@@ -65,12 +67,17 @@ function Checkout() {
         loadStores();
     }, []);
 
-    // Tổng tiền đồng bộ với CartPage
+    // ====================================================
+    // TOTAL FIXED
+    // ====================================================
     const total = cart.reduce((sum, item) => {
         const price = getPrice(item.product);
         return sum + price * item.quantity;
     }, 0);
 
+    // ====================================================
+    // NEXT STEP
+    // ====================================================
     const handleNext = () => {
         if (!customer.name || !customer.phone) {
             alert("Vui lòng nhập đủ thông tin");
@@ -87,46 +94,78 @@ function Checkout() {
         setStep(2);
     };
 
+    // ====================================================
+    // PAYMENT
+    // ====================================================
     const handlePayment = async () => {
         try {
             const formattedItems = cart.map((item) => ({
-                product: item.product?._id,
+                product: item.product?._id || item.product,
                 quantity: item.quantity
             }));
 
-            await axios.post(
+            const orderData = {
+                items: formattedItems,
+                customer,
+                paymentMethod,
+                deliveryMethod,
+                storeAddress: deliveryMethod === "STORE" ? storeAddress : null
+            };
+
+            const res = await axios.post(
                 `${API_BASE}/api/orders`,
-                { items: formattedItems },
-                { headers: { Authorization: `Bearer ${token}` } }
+                orderData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
             );
+
+            console.log("ORDER OK:", res.data);
 
             alert("🎉 Thanh toán thành công!");
             sessionStorage.removeItem("checkoutItems");
             window.location.href = "/";
         } catch (error) {
-            console.log("Payment error:", error);
-            alert("Có lỗi xảy ra khi thanh toán");
+            console.log("Payment error:", error?.response?.data || error.message);
+            alert(error?.response?.data?.message || "Có lỗi xảy ra khi thanh toán");
         }
     };
 
     return (
         <div className="checkout-page">
             <div className="checkout-wrapper">
+
                 <div className="checkout-steps">
                     <div className={step === 1 ? "active" : ""}>1. THÔNG TIN</div>
                     <div className={step === 2 ? "active" : ""}>2. THANH TOÁN</div>
                 </div>
 
-                {/* ================= CART ITEMS ================= */}
+                {/* CART */}
                 <div className="checkout-card">
                     {cart.map((item) => {
                         const product = item.product;
+                        const finalPrice = getPrice(product);
+
                         return (
                             <div key={product._id} className="product-row">
                                 <img src={getImageUrl(product.image)} alt={product.name} />
+
                                 <div className="product-info">
                                     <h4>{product.name}</h4>
-                                    <p>{getPrice(product).toLocaleString()}đ</p>
+
+                                    <p>
+                                        {finalPrice.toLocaleString()}đ
+
+                                        {product.discount > 0 && (
+                                            <span className="old-price">
+                                                {product.originalPrice.toLocaleString()}đ
+                                            </span>
+                                        )}
+                                    </p>
+
                                     <span>Số lượng: {item.quantity}</span>
                                 </div>
                             </div>
@@ -134,10 +173,11 @@ function Checkout() {
                     })}
                 </div>
 
-                {/* ================= STEP 1: CUSTOMER INFO ================= */}
+                {/* STEP 1 */}
                 {step === 1 && (
                     <div className="checkout-card">
                         <h3>Thông tin khách hàng</h3>
+
                         <div className="input-group">
                             <input
                                 placeholder="Họ và tên"
@@ -171,6 +211,7 @@ function Checkout() {
                                 />
                                 Nhận tại cửa hàng
                             </label>
+
                             <label>
                                 <input
                                     type="radio"
@@ -209,7 +250,7 @@ function Checkout() {
                         )}
 
                         <div className="checkout-summary">
-                            <span>Tổng tiền tạm tính:</span>
+                            <span>Tổng tiền:</span>
                             <span className="price">{total.toLocaleString()}đ</span>
                         </div>
 
@@ -219,10 +260,11 @@ function Checkout() {
                     </div>
                 )}
 
-                {/* ================= STEP 2: PAYMENT ================= */}
+                {/* STEP 2 */}
                 {step === 2 && (
                     <div className="checkout-card">
                         <h3>Phương thức thanh toán</h3>
+
                         <div className="payment-method">
                             <label>
                                 <input
@@ -232,6 +274,7 @@ function Checkout() {
                                 />
                                 Thanh toán khi nhận hàng
                             </label>
+
                             <label>
                                 <input
                                     type="radio"
@@ -252,6 +295,7 @@ function Checkout() {
                         </button>
                     </div>
                 )}
+
             </div>
         </div>
     );
