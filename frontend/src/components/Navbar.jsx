@@ -18,9 +18,9 @@ function Navbar() {
 
     const location = useLocation();
     const navigate = useNavigate();
-
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+    
+  const [token, setToken] = useState(localStorage.getItem("user_token"));
+const [role, setRole] = useState(localStorage.getItem("user_role"));
 
     const API_BASE = "http://localhost:5000";
 
@@ -31,11 +31,23 @@ function Navbar() {
             .then((res) => setCategories(res.data))
             .catch((err) => console.log(err));
     }, []);
+//============login/logout=======//
+useEffect(() => {
+    const handleAuthChange = () => {
+        setToken(localStorage.getItem("user_token"));
+    setRole(localStorage.getItem("user_role"));
+    };
 
+    window.addEventListener("authChanged", handleAuthChange);
+
+    return () => window.removeEventListener("authChanged", handleAuthChange);
+}, []);
     // ================= CART COUNT =================
     const fetchCartCount = async () => {
-        if (!token) return;
-
+        if (!token) {
+        setCartCount(0); 
+        return;
+    }
         try {
             const res = await axios.get(`${API_BASE}/api/cart`, {
                 headers: {
@@ -45,12 +57,16 @@ function Navbar() {
 
             const items = res.data.items || [];
 
-            const totalQty = items.reduce(
-                (sum, item) => sum + item.quantity,
-                0
-            );
+// ✅ lọc item hợp lệ
+const validItems = items.filter(item => item.product);
 
-            setCartCount(totalQty);
+// ✅ tính lại
+const totalQty = validItems.reduce(
+  (sum, item) => sum + item.quantity,
+  0
+);
+
+setCartCount(totalQty);
 
         } catch (err) {
             console.log(err);
@@ -58,13 +74,21 @@ function Navbar() {
     };
 
     useEffect(() => {
-        fetchCartCount();
+    fetchCartCount();
 
-        const handleUpdate = () => fetchCartCount();
-        window.addEventListener("cartUpdated", handleUpdate);
+  const handleUpdate = (e) => {
+  requestAnimationFrame(() => {
+    if (e.detail?.cartCount !== undefined) {
+      setCartCount(e.detail.cartCount);
+    } else {
+      fetchCartCount();
+    }
+  });
+};
+    window.addEventListener("cartUpdated", handleUpdate);
 
-        return () => window.removeEventListener("cartUpdated", handleUpdate);
-    }, []);
+    return () => window.removeEventListener("cartUpdated", handleUpdate);
+}, [token]); // 🔥 thêm token vào đây
 
     // ================= LOGO CLICK =================
     const handleLogoClick = (e) => {
@@ -77,7 +101,7 @@ function Navbar() {
     // ================= CART =================
     const handleCartClick = () => {
         if (!token || role !== "USER") {
-            setShowLoginModal(true);
+setShowLoginModal(true);
             return;
         }
         navigate("/cart");
@@ -85,9 +109,20 @@ function Navbar() {
 
     // ================= LOGOUT =================
     const handleLogout = () => {
-        localStorage.clear();
-        navigate("/login");
-    };
+  localStorage.clear();
+
+  setCartCount(0);
+
+  // ✅ auth
+  window.dispatchEvent(new Event("authChanged"));
+
+  // 🔥 FIX CHỖ NÀY
+  window.dispatchEvent(new CustomEvent("cartUpdated", {
+    detail: { cartCount: 0 }
+  }));
+
+  navigate("/login");
+};
 
     // ================= SEARCH =================
     useEffect(() => {
@@ -103,8 +138,7 @@ function Navbar() {
 
             try {
                 setLoading(true);
-
-                const res = await axios.get(
+const res = await axios.get(
                     `${API_BASE}/api/products/search`,
                     { params: { q: keyword } }
                 );
@@ -171,12 +205,12 @@ function Navbar() {
                         </span>
 
                         {/* USER */}
-                        {token && role === "USER" ? (
+                        {token ? (
 
                             <div className="user-menu">
 
                                 <FaUserCircle
-                                    size={28}
+size={28}
                                     className="user-icon"
                                     onClick={() => setOpen(!open)}
                                 />
@@ -264,7 +298,7 @@ function Navbar() {
                             }}
                         >
                             ✕
-                        </button>
+</button>
 
                     </div>
 
@@ -286,7 +320,7 @@ function Navbar() {
 
                                 {/* ✅ THUMBNAIL NHỎ */}
                                 <img
-                                    className="search-thumb"
+className="search-thumb"
                                     src={
                                         item.image?.startsWith("http")
                                             ? item.image

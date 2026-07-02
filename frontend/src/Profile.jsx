@@ -10,7 +10,7 @@ function Profile() {
 
   useEffect(()=>{
 
-    const token = localStorage.getItem("token");
+const token = localStorage.getItem("user_token");
 
     axios.get(
       "http://localhost:5000/api/users/profile",

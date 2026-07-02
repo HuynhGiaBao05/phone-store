@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
     {
-        name: { type: String, required: true, trim: true },
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
         category: {
             type: mongoose.Schema.Types.ObjectId,
@@ -26,7 +30,7 @@ const productSchema = new mongoose.Schema(
             type: Number,
             default: 0,
             min: 0,
-            max: 100,
+            max: 100
         },
 
         stock: {
@@ -36,41 +40,59 @@ const productSchema = new mongoose.Schema(
             min: 0
         },
 
-        // 🔥 NEW: khóa sản phẩm (admin / system)
-        isLocked: {
-            type: Boolean,
-            default: false
+        description: {
+            type: String,
+            default: ""
         },
 
-        description: { type: String, default: "" },
-        promotion: { type: String, default: "" },
+        promotion: {
+            type: String,
+            default: ""
+        },
 
         promoEndDate: {
             type: Date,
             default: null
         },
 
-        image: { type: String, default: null },
+        // 🔥 FIX: đổi image -> images
+        images: {
+            type: [String],
+            default: []
+        },
+
+        reviews: [
+            {
+                user: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User"
+                },
+                rating: {
+                    type: Number,
+                    required: true
+                },
+                comment: {
+                    type: String,
+                    default: ""
+                },
+
+                images: [
+                    {
+                        type: String
+                    }
+                ],
+
+                createdAt: {
+                    type: Date,
+                    default: Date.now
+                }
+            }
+        ]
     },
-    {
-        timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true }
-    }
+    { timestamps: true }
 );
 
-// 🔥 virtual: hết hàng
-productSchema.virtual("isOutOfStock").get(function () {
-    return this.stock <= 0;
-});
-
-// 🔥 virtual: còn hàng text
-productSchema.virtual("stockText").get(function () {
-    if (this.stock <= 0) return "Hết hàng";
-    return `Còn ${this.stock} sản phẩm`;
-});
-
-// auto promo
+// =====================================================
 productSchema.pre("save", function (next) {
     if (this.discount === 0) {
         this.promoEndDate = null;
@@ -78,4 +100,4 @@ productSchema.pre("save", function (next) {
     next();
 });
 
-module.exports = mongoose.model("Product", productSchema);
+module.exports = mongoose.model("Product", productSchema)

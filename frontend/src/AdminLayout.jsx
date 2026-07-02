@@ -17,6 +17,10 @@ function AdminLayout({ children }) {
         <Link to="/admin-orders">Orders</Link>
         <Link to="/admin-stores">Stores</Link>
         <Link to="/admin-reports">Reports</Link>
+        <Link to="/admin-security-logs">Security Logs</Link>
+        <Link to="/admin-activity-logs">Activity Logs</Link>
+        <Link to="/admin-customers">Customers</Link>
+        <Link to="/admin-banners"> Banner</Link>
       </div>
 
       {/* Content */}

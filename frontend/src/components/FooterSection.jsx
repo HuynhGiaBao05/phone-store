@@ -39,15 +39,15 @@ function FooterSection() {
 
             {/* SOCIAL ICONS */}
             <div className="footer-social">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer">
+              <a href="https://www.facebook.com/giabaohuynh100905?mibextid=wwXIfr&rdid=l1qpYns4jzhqyHNn&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1KruqujEi7%2F%3Fmibextid%3DwwXIfr#" target="_blank" rel="noreferrer">
                 <i className="fa-brands fa-facebook-f"></i>
               </a>
 
-              <a href="https://instagram.com" target="_blank" rel="noreferrer">
+              <a href="https://www.instagram.com/hzabaoo_05?igsh=cGM2bHVneWY2c3Jz&utm_source=qr" target="_blank" rel="noreferrer">
                 <i className="fa-brands fa-instagram"></i>
               </a>
 
-              <a href="https://tiktok.com" target="_blank" rel="noreferrer">
+              <a href="https://www.tiktok.com/@hyunjaebaoo_05?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer">
                 <i className="fa-brands fa-tiktok"></i>
               </a>
             </div>

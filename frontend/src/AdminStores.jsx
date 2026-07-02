@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./AdminStores.css";
+import { toast } from "react-toastify";
 
 function AdminStores() {
 
@@ -18,7 +19,7 @@ function AdminStores() {
     phone: ""
   });
 
-  const token = localStorage.getItem("adminToken");
+  const token = localStorage.getItem("token");
 
   // ==========================================
   // ⭐ LOAD STORE LIST
@@ -28,27 +29,24 @@ function AdminStores() {
   }, []);
 
   const fetchStores = async () => {
+  try {
+    const token = localStorage.getItem("token"); // 🔥 FIX
 
-    try {
-
-      const res = await axios.get(
-        "http://localhost:5000/api/stores/admin",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+    const res = await axios.get(
+      "http://localhost:5000/api/stores/admin",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      );
+      }
+    );
 
-      setStores(res.data);
+    setStores(res.data);
 
-    } catch (err) {
-
-      console.log("❌ Lỗi lấy stores:", err);
-
-    }
-
-  };
+  } catch (err) {
+    console.log("❌ Lỗi lấy stores:", err.response?.data);
+  }
+};
 
   // ==========================================
   // ⭐ CREATE / UPDATE STORE
@@ -56,7 +54,7 @@ function AdminStores() {
   const handleSubmit = async () => {
 
     if (!form.name || !form.address) {
-      alert("Nhập đầy đủ thông tin");
+      toast.error("Nhập đầy đủ thông tin");
       return;
     }
 

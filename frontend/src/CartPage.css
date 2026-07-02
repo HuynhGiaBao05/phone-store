@@ -150,7 +150,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s, background 0.2s;
+transition: transform 0.2s, background 0.2s;
 }
 
     .delete-btn:hover {

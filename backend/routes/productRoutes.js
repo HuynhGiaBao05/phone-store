@@ -3,423 +3,428 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Category = require("../models/Category");
-const Order = require("../models/Order"); // ✅ THÊM
 
 const upload = require("../middleware/uploadMiddleware");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 
 const fs = require("fs");
 const path = require("path");
+const ActivityLog = require("../models/ActivityLog");
 
 // =====================================================
-// FUNCTION TÍNH GIÁ (GIỮ NGUYÊN)
+// FUNCTION TÍNH GIÁ + AUTO HỦY KM + BADGE SẮP HẾT GIỜ
 // =====================================================
 async function calculateProductPrice(product) {
 
-    let finalPrice = product.originalPrice;
-    let activeDiscount = product.discount;
-    let isExpiringSoon = false;
+  let finalPrice = product.originalPrice;
+  let activeDiscount = product.discount;
+  let isExpiringSoon = false; // 🔥 FLAG BADGE
 
-    if (product.discount > 0 && product.promoEndDate) {
+  if (product.discount > 0 && product.promoEndDate) {
 
-        const now = new Date();
-        const endDate = new Date(product.promoEndDate);
-        const diff = endDate - now;
+    const now = new Date();
+    const endDate = new Date(product.promoEndDate);
+    const diff = endDate - now;
 
-        if (diff <= 0) {
-            product.discount = 0;
-            product.promoEndDate = null;
-            await product.save();
+    // =====================================================
+    // 🔥 1️⃣ HẾT HẠN → RESET DISCOUNT
+    // =====================================================
+    if (diff <= 0) {
 
-            activeDiscount = 0;
-            finalPrice = product.originalPrice;
-        } else {
+      product.discount = 0;
+      product.promoEndDate = null;
 
-            finalPrice =
-                product.originalPrice -
-                (product.originalPrice * product.discount) / 100;
-
-            const hoursLeft = diff / (1000 * 60 * 60);
-
-            if (hoursLeft <= 24) {
-                isExpiringSoon = true;
-            }
-        }
+      activeDiscount = 0;
+      finalPrice = product.originalPrice;
     }
 
+    // =====================================================
+    // 🔥 2️⃣ CÒN HẠN → TÍNH GIÁ
+    // =====================================================
+    else {
+
+      finalPrice =
+        product.originalPrice -
+        (product.originalPrice * product.discount) / 100;
+
+      // =====================================================
+      // 🔥 3️⃣ NẾU CÒN DƯỚI 24H → BẬT BADGE
+      // =====================================================
+      const hoursLeft = diff / (1000 * 60 * 60);
+
+      if (hoursLeft <= 24) {
+        isExpiringSoon = true;
+      }
+    }
+  }
+
     return {
-        ...product._doc,
+        ...product.toObject(),
         price: finalPrice,
         discount: activeDiscount,
         isExpiringSoon,
-        image: product.image
-            ? `http://localhost:5000/uploads/${product.image}`
-            : null,
+        images: product.images
+            ? product.images.map(img => `http://localhost:5000/uploads/${img}`)
+            : [],
     };
 }
-
-// =====================================================
-// ⭐ TOP PRODUCTS HOME (FIX 100% - LUÔN CÓ DATA)
-// =====================================================
-router.get("/top-products-home", async (req, res) => {
-    try {
-
-        const topProducts = await Order.aggregate([
-            { $match: { status: { $ne: "CANCELLED" } } }, // ✅ an toàn
-            { $unwind: "$items" },
-
-            {
-                $group: {
-                    _id: "$items.product",
-                    totalSold: { $sum: "$items.quantity" }
-                }
-            },
-
-            { $sort: { totalSold: -1 } },
-            { $limit: 10 }
-        ]);
-
-        // =====================================================
-        // 🔥 FALLBACK: nếu chưa có đơn hàng
-        // =====================================================
-        if (!topProducts || topProducts.length === 0) {
-            const fallbackProducts = await Product.find()
-                .sort({ createdAt: -1 })
-                .limit(10)
-                .populate("category")
-                .populate("brand");
-
-            const resultFallback = await Promise.all(
-                fallbackProducts.map(p => calculateProductPrice(p))
-            );
-
-            return res.json(resultFallback);
-        }
-
-        const products = await Product.find({
-            _id: { $in: topProducts.map(p => p._id) }
-        })
-            .populate("category")
-            .populate("brand");
-
-        const result = await Promise.all(
-            products.map(async (p) => {
-
-                const found = topProducts.find(t =>
-                    t._id.toString() === p._id.toString()
-                );
-
-                const data = await calculateProductPrice(p);
-
-                return {
-                    ...data,
-                    sold: found ? found.totalSold : 0
-                };
-            })
-        );
-
-        res.json(result);
-
-    } catch (error) {
-        res.status(500).json({
-            message: "Lỗi top products",
-            error: error.message
-        });
-    }
-});
-
-
-// =====================================================
-// SEARCH PRODUCTS
-// =====================================================
-router.get("/search", async (req, res) => {
-    try {
-
-        const keyword = req.query.q?.trim();
-
-        if (!keyword) return res.json([]);
-
-        let categoryMatch = await Category.findOne({
-            name: { $regex: keyword, $options: "i" }
-        });
-
-        const filter = {
-            $or: [
-                { name: { $regex: keyword, $options: "i" } },
-
-                ...(categoryMatch
-                    ? [{ category: categoryMatch._id }]
-                    : []),
-
-                { promotion: { $regex: keyword, $options: "i" } },
-
-                ...(isNaN(keyword)
-                    ? []
-                    : [{ originalPrice: Number(keyword) }])
-            ]
-        };
-
-        const products = await Product.find(filter)
-            .populate("category")
-            .populate("brand")
-            .sort({ createdAt: -1 });
-
-        const result = await Promise.all(
-            products.map((p) => calculateProductPrice(p))
-        );
-
-        res.json(result);
-
-    } catch (error) {
-        res.status(500).json({
-            message: "Search error",
-            error: error.message
-        });
-    }
-});
-
 
 // =====================================================
 // CREATE PRODUCT
 // =====================================================
 router.post(
-    "/create",
-    protect,
-    authorizeRoles("ADMIN", "STAFF"),
-    upload.single("image"),
-    async (req, res) => {
-        try {
+  "/create",
+  protect,
+  authorizeRoles("ADMIN", "STAFF"),
+  upload.array("images", 10),
+  async (req, res) => {
+    try {
 
-            if (!req.body.name || !req.body.category || !req.body.brand) {
-                return res.status(400).json({
-                    message: "Thiếu thông tin bắt buộc"
-                });
-            }
+      const originalPrice = Number(req.body.originalPrice);
+      const discount = Math.max(0, Math.min(100, Number(req.body.discount) || 0));
 
-            const product = new Product({
-                name: req.body.name.trim(),
-                category: req.body.category,
-                brand: req.body.brand,
-                originalPrice: Number(req.body.originalPrice),
-                discount: Number(req.body.discount) || 0,
-                stock: Number(req.body.stock) || 0,
-                description: req.body.description || "",
-                promotion: req.body.promotion || "",
-                promoEndDate: req.body.promoEndDate
-                    ? new Date(req.body.promoEndDate)
-                    : null,
-                image: req.file ? req.file.filename : null,
-            });
+      if (!originalPrice || originalPrice <= 0) {
+        return res.status(400).json({ message: "Giá gốc phải lớn hơn 0" });
+      }
 
-            await product.save();
+      const product = new Product({
+        name: req.body.name,
+        category: req.body.category,
+        brand: req.body.brand,
+        originalPrice,
+        discount,
+        stock: req.body.stock,
+        description: req.body.description,
+        promotion: req.body.promotion,
+// 🔥 CHỈ LƯU promoEndDate NẾU discount > 0
+        promoEndDate: discount > 0 ? req.body.promoEndDate : null,
 
-            res.json({
-                message: "Product created",
-                product
-            });
+          images: req.files ? req.files.map(file => file.filename) : [],
+      });
 
-        } catch (error) {
-            res.status(500).json({
-                message: "Lỗi server",
-                error: error.message
-            });
-        }
+      await product.save();
+
+      // 📝 ACTIVITY LOG: admin thêm sản phẩm
+await ActivityLog.create({
+  user: req.user._id,
+  action: "CREATE_PRODUCT",
+  description: `Thêm sản phẩm ${product.name}`,
+});
+
+      res.json({ message: "Product created" });
+
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
+  }
 );
 
-
 // =====================================================
-// GET ALL PRODUCTS
+// GET ALL PRODUCTS (PAGINATION)
 // =====================================================
 router.get("/", async (req, res) => {
-    try {
+  try {
 
-        const category = req.query.category;
-        let filter = {};
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 999;
+    const category = req.query.category;
 
-        if (category && category !== "all") {
-            filter.category = category;
-        }
+    const skip = (page - 1) * limit;
 
-        const products = await Product.find(filter)
-            .populate("category")
-            .populate("brand")
-            .sort({ createdAt: -1 });
+    let filter = {};
 
-        const updatedProducts = await Promise.all(
-            products.map((p) => calculateProductPrice(p))
-        );
-
-        res.json({
-            products: updatedProducts,
-            totalProducts: updatedProducts.length
-        });
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    if (category && category !== "all") {
+      filter.category = category;
     }
+
+    const totalProducts = await Product.countDocuments(filter);
+
+    const products = await Product.find(filter)
+      .populate("category")
+      .populate("brand")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const updatedProducts = await Promise.all(
+      products.map((p) => calculateProductPrice(p))
+    );
+
+    res.json({
+      products: updatedProducts,
+      totalPages: Math.ceil(totalProducts / limit),
+      currentPage: page,
+      totalProducts
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-
 // =====================================================
-// GET PRODUCT BY ID
-// =====================================================
-router.get("/:id", async (req, res) => {
-    try {
-
-        const product = await Product.findById(req.params.id)
-            .populate("category")
-            .populate("brand");
-
-        if (!product) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-
-        const productWithPrice = await calculateProductPrice(product);
-        res.json(productWithPrice);
-
-    } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-});
-
-
-// =====================================================
-// GET BY CATEGORY SLUG
+// GET PRODUCTS BY CATEGORY SLUG
 // =====================================================
 router.get("/category/:slug", async (req, res) => {
-    try {
+  try {
 
-        const category = await Category.findOne({ slug: req.params.slug });
-
-        if (!category) {
-            return res.status(404).json({ message: "Category không tồn tại" });
-        }
-
-        const products = await Product.find({ category: category._id })
-            .populate("category")
-            .populate("brand")
-            .sort({ createdAt: -1 });
-
-        const updatedProducts = await Promise.all(
-            products.map((p) => calculateProductPrice(p))
-        );
-
-        res.json(updatedProducts);
-
-    } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error: error.message });
+    const category = await Category.findOne({ slug: req.params.slug });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
     }
+
+    const products = await Product.find({ category: category._id })
+      .populate("category")
+      .populate("brand");
+
+    const updatedProducts = await Promise.all(
+      products.map((p) => calculateProductPrice(p))
+    );
+
+    res.json(updatedProducts);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // =====================================================
 // UPDATE PRODUCT
 // =====================================================
 router.put(
-    "/:id",
-    protect,
-    authorizeRoles("ADMIN", "STAFF"),
-    upload.single("image"),
-    async (req, res) => {
-        try {
+  "/:id",
+  protect,
+  authorizeRoles("ADMIN", "STAFF"),
+    upload.array("images", 10),
+  async (req, res) => {
+    try {
+    console.log("BODY:", req.body);   // ✅ THÊM DÒNG NÀY
+        console.log("existingImages:", req.body.existingImages);
 
-            const product = await Product.findById(req.params.id);
-            if (!product) {
-                return res.status(404).json({ message: "Product not found" });
-            }
+    console.log("FILES:", req.files); // ✅ THÊM LUÔN
+      const product = await Product.findById(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
 
-            // =========================
-            // UPDATE FIELDS (FIX HERE)
-            // =========================
-            if (req.body.name !== undefined) {
-                product.name = req.body.name;
-            }
+        // ===== UPDATE FIELD =====
+        product.name = req.body.name ?? product.name;
+        product.stock = req.body.stock ?? product.stock;
+product.description = req.body.description ?? product.description;
+        product.promotion = req.body.promotion ?? product.promotion;
+        product.category = req.body.category ?? product.category;
+        product.brand = req.body.brand ?? product.brand;
 
-            if (req.body.category !== undefined) {
-                product.category = req.body.category;
-            }
+        // 🔥 FIX THIẾU
+if (req.body.originalPrice !== undefined)
+  product.originalPrice = Number(req.body.originalPrice);
 
-            if (req.body.brand !== undefined) {
-                product.brand = req.body.brand;
-            }
+if (req.body.discount !== undefined)
+  product.discount = Number(req.body.discount);
 
-            if (req.body.originalPrice !== undefined) {
-                product.originalPrice = Number(req.body.originalPrice);
-            }
+if (req.body.promoEndDate !== undefined)
+  product.promoEndDate = req.body.promoEndDate;
+        // ===== UPDATE ẢNH =====
+// 🔥 xử lý ảnh đúng
 
-            if (req.body.discount !== undefined) {
-                product.discount = Number(req.body.discount);
-            }
 
-            // 🔥 FIX QUAN TRỌNG: STOCK
-            if (req.body.stock !== undefined) {
-                product.stock = Number(req.body.stock);
-            }
+// 🔥 nếu có upload thêm ảnh mới thì append
+// 🔥 1. lấy ảnh còn lại từ FE (sau khi user xóa)
+let images = [];
 
-            if (req.body.description !== undefined) {
-                product.description = req.body.description;
-            }
+if (req.body.existingImages) {
+  images = Array.isArray(req.body.existingImages)
+    ? req.body.existingImages
+    : [req.body.existingImages];
+}
 
-            if (req.body.promotion !== undefined) {
-                product.promotion = req.body.promotion;
-            }
+// 🔥 2. thêm ảnh mới nếu có
+if (req.files && req.files.length > 0) {
+  images = [
+    ...images,
+    ...req.files.map(file => file.filename)
+  ];
+}
 
-            if (req.body.promoEndDate !== undefined) {
-                product.promoEndDate = req.body.promoEndDate
-                    ? new Date(req.body.promoEndDate)
-                    : null;
-            }
+// 🔥 3. gán lại (QUAN TRỌNG)
+product.images = images;
 
-            // =========================
-            // IMAGE UPDATE
-            // =========================
-            if (req.file) {
-                if (product.image) {
-                    const oldPath = path.join(__dirname, "../uploads", product.image);
-                    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-                }
-                product.image = req.file.filename;
-            }
+      await product.save();
 
-            await product.save();
+// 📝 ACTIVITY LOG: update sản phẩm
+await ActivityLog.create({
+  user: req.user._id,
+  action: "UPDATE_PRODUCT",
+  description: `Cập nhật sản phẩm ${product.name}`,
+});
 
-            res.json({
-                message: "Product updated",
-                product // 🔥 trả về data mới
-            });
+      res.json({ message: "Product updated" });
 
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
+  }
 );
 
 // =====================================================
 // DELETE PRODUCT
 // =====================================================
-router.delete(
-    "/:id",
-    protect,
-    authorizeRoles("ADMIN", "STAFF"),
-    async (req, res) => {
+    router.delete(
+      "/:id",
+      protect,
+      authorizeRoles("ADMIN", "STAFF"),
+      async (req, res) => {
+        console.log("USER:", req.user);
+          console.log("PARAM ID:", req.params.id);
+
         try {
 
-            const product = await Product.findById(req.params.id);
-            if (!product) return res.status(404).json({ message: "Product not found" });
+          const product = await Product.findById(req.params.id);
+          if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+          }
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+            if (req.files && req.files.length > 0) {
+                try {
+                    product.images.forEach(img => {
+                        const imagePath = path.join(__dirname, "../uploads", img);
 
-            if (product.image) {
-                const imgPath = path.join(__dirname, "../uploads", product.image);
-                if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+                        if (fs.existsSync(imagePath)) {
+                            fs.unlinkSync(imagePath);
+                        } else {
+                            console.log("⚠️ File not found:", imagePath);
+                        }
+                    });
+                } catch (err) {
+                    console.log("⚠️ Delete image error:", err.message);
+                }
             }
 
-            await Product.findByIdAndDelete(req.params.id);
+          await Product.findByIdAndDelete(req.params.id);
 
-            res.json({ message: "Product deleted successfully" });
+// 📝 ACTIVITY LOG: delete sản phẩm
+//await ActivityLog.create({
+  //user: req.user._id,
+ // action: "DELETE_PRODUCT",
+  //description: `Xóa sản phẩm ${product.name}`,
+//});
 
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+      res.json({ message: "Product deleted successfully" });
+
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
+  }
 );
 
+// =====================================================
+// SEARCH PRODUCT
+// =====================================================
+router.get("/search", async (req, res) => {
+  try {
+
+    const keyword = req.query.q;
+
+    if (!keyword) {
+      return res.json([]);
+    }
+
+    const products = await Product.find({
+      name: { $regex: keyword, $options: "i" }
+    })
+      .limit(10)
+      .sort({ createdAt: -1 });
+
+    const updatedProducts = await Promise.all(
+      products.map((p) => calculateProductPrice(p))
+    );
+
+    res.json(updatedProducts);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================================================
+// GET SINGLE PRODUCT
+// =====================================================
+router.get("/:id", async (req, res) => {
+  try {
+
+    const product = await Product.findById(req.params.id)
+  .populate("category")
+  .populate("brand")
+  .populate("reviews.user", "name email");
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const updatedProduct = await calculateProductPrice(product);
+
+    res.json(updatedProduct);
+
+  } catch (error) {
+     console.error("🔥 ERROR GET PRODUCT:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+// =====================================================
+// USER - ĐÁNH GIÁ SẢN PHẨM
+// =====================================================
+// 🔥 upload nhiều ảnh
+router.post(
+  "/:id/review",
+  protect,
+  upload.array("images", 5), // 🔥 tối đa 5 ảnh
+  async (req, res) => {
+    try {
+      const { rating, comment } = req.body;
+
+      const product = await Product.findById(req.params.id);
+
+      if (!product) {
+        return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+      }
+
+      // 🔥 lấy list ảnh
+      const imageUrls = req.files
+        ? req.files.map(file => file.filename)
+        : [];
+
+      const review = {
+        user: req.user._id,
+        rating: Number(rating),
+        comment,
+        images: imageUrls // 🔥 thêm ảnh
+      };
+
+      if (!product.reviews) {
+        product.reviews = [];
+      }
+// ❌ CHẶN REVIEW 2 LẦN
+const alreadyReviewed = product.reviews.find(
+  r => r.user.toString() === req.user._id.toString()
+);
+
+if (alreadyReviewed) {
+  return res.status(400).json({
+    message: "Bạn đã đánh giá rồi"
+  });
+}
+      product.reviews.push(review);
+
+      await product.save();
+
+      res.json({ message: "Đánh giá thành công" });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
 module.exports = router;

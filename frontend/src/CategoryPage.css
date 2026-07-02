@@ -1,26 +1,23 @@
 /* ===== CATEGORY PAGE ===== */
 .category-page {
     padding: 120px 120px;
-    background: #f9fafb; /* nền sáng, nhẹ nhàng */
+    background: #f1f3f6; /* nền xám nhẹ */
     min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #111827; /* chữ đen toàn trang */
 }
 
 /* ===== BANNER ===== */
 .category-banner {
-    background: linear-gradient(135deg, #e5e7eb, #d1d5db); /* xám nhẹ kiểu iPhone */
-    color: #111827; /* CHỮ ĐEN */
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db) !important;
     border-radius: 25px;
     padding: 60px;
     text-align: center;
     margin-bottom: 50px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    color: #111;
 }
 
     .category-banner h1 {
-        font-size: 42px;
-        font-weight: 700;
+        font-size: 40px;
+        font-weight: 700; /* đậm hơn */
     }
 
 /* ===== TOOLBAR ===== */
@@ -32,32 +29,31 @@
 }
 
 .filter-btn {
-    background: #e5e7eb; /* xám */
-    color: #111827; /* chữ đen */
-    padding: 10px 22px;
-    border-radius: 25px;
+    background: #e5e7eb;
+    padding: 10px 20px;
+    border-radius: 20px;
     cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-    border: none;
+    transition: 0.3s;
+    color: #333;
+    font-weight: 600; /* đậm hơn */
 }
 
     .filter-btn:hover {
-        background: #d1d5db; /* xám đậm hơn */
+        background: #d1d5db;
     }
 
 .sort-group button {
     background: transparent;
     border: none;
-    color: #111827; /* chữ đen */
+    color: #444;
     margin-left: 15px;
     cursor: pointer;
+    transition: 0.3s;
     font-weight: 500;
-    transition: color 0.3s;
 }
 
     .sort-group button:hover {
-        color: #000; /* đậm hơn khi hover */
+        color: #000;
     }
 
 /* ===== GRID ===== */
@@ -70,18 +66,18 @@
 /* ===== CARD ===== */
 .category-card {
     position: relative;
-    background: #fff;
+    background: #ffffff;
     border-radius: 20px;
     padding: 25px;
     text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: 0.3s;
     text-decoration: none;
-    color: #111827;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    color: #111;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
     .category-card:hover {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
     }
 
@@ -90,40 +86,42 @@
         height: 220px;
         object-fit: contain;
         margin-bottom: 15px;
-        border-radius: 15px;
     }
 
     .category-card h3 {
-        font-size: 17px;
+        font-size: 16px;
         margin-bottom: 10px;
-        font-weight: 600;
-        color: #111827;
+        font-weight: 600; /* đậm hơn */
     }
 
 /* ===== PRICE BOX ===== */
 .price-box {
     margin-top: 8px;
+
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: column;      /* ⭐ FIX CHÍNH */
+    align-items: center;         /* ⭐ căn giữa */
     gap: 4px;
-    min-height: 40px;
+
+    min-height: 40px;    
 }
 
 .new-price {
     font-weight: 700;
-    color: #ef4444; /* đỏ nổi bật cho giá giảm */
+    color: #111; /* xám đậm thay xanh */
     font-size: 16px;
 }
 
 .old-price {
     text-decoration: line-through;
-    color: #9ca3af;
+    color: #999;
+    margin-left: 8px;
     font-size: 14px;
 }
 
 .discount {
-    color: #10b981; /* xanh lá cho badge giảm giá */
+    margin-left: 6px;
+    color: #555;
     font-size: 13px;
     font-weight: 600;
 }
@@ -133,13 +131,12 @@
     position: absolute;
     top: 12px;
     left: 12px;
-    background: #ef4444; /* đỏ nổi bật */
+    background: #333; /* xám đậm */
     color: white;
-    padding: 5px 12px;
+    padding: 4px 10px;
     font-size: 12px;
-    border-radius: 8px;
-    font-weight: 700;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    font-weight: 600;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -151,37 +148,10 @@
 
 @media (max-width: 600px) {
     .category-page {
-        padding: 80px 20px;
+        padding: 120px 20px;
     }
 
     .category-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
     }
 }
-
-/* ===== PAGINATION ===== */
-.pagination {
-    margin-top: 40px;
-    text-align: center;
-}
-
-    .pagination button {
-        margin: 0 6px;
-        padding: 8px 14px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        background: white;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-        .pagination button:hover {
-            background: #111;
-            color: #fff;
-        }
-
-    .pagination .active {
-        background: #111;
-        color: #fff;
-    }

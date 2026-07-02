@@ -1,0 +1,59 @@
+.order-history {
+  margin-top: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.order-history h3 {
+  margin-bottom: 15px;
+}
+
+.order-table {
+    width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.order-table th {
+  background: #111;
+  color: white;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.order-table td {
+  border-bottom: 1px solid #eee;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.order-table tr {
+  cursor: pointer;
+  transition: 0.2s;
+}
+.order-table tr:hover {
+  background: #f3f4f6;
+}
+
+.order-detail {
+  margin-top: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+}
+.empty-order {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+}
+.order-total {
+  text-align: right;
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+.order-total span {
+  color: red;
+  font-weight: bold;
+}

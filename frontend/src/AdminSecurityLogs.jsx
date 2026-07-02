@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./AdminSecurityLogs.css";
+import { toast } from "react-toastify";
 
 function AdminSecurityLogs() {
   const [logs, setLogs] = useState([]);
@@ -24,11 +25,11 @@ function AdminSecurityLogs() {
         "http://localhost:5000/api/users/security-logs",
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+           Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
-      setLogs(res.data);
+      setLogs(res.data.data || res.data || []);
     } catch (err) {
       console.log(err);
     }

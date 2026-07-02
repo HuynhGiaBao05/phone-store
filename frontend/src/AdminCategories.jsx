@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./AdminCategories.css";
+import { toast } from "react-toastify";
 
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
@@ -21,7 +22,7 @@ function AdminCategories() {
     await axios.post("http://localhost:5000/api/categories", {
       name: newCategory,
     });
-
+    toast.success("Thêm danh mục thành công!");
     setNewCategory("");
     fetchCategories();
   };
@@ -30,6 +31,7 @@ function AdminCategories() {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
 
     await axios.delete(`http://localhost:5000/api/categories/${id}`);
+    toast.success("Xóa danh mục thành công!");
     fetchCategories();
   };
 

@@ -38,9 +38,22 @@ import Orders from "./Orders";
 import MfaWait from "./MfaWait";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ProductListPage from "./ProductListPage"; // 👈 thêm trên đầu file
+import AdminSecurityLogs from "./AdminSecurityLogs";
+import AdminActivityLogs from "./AdminActivityLogs";
+import ProductListPage from "./ProductListPage"; 
+import CustomerManagement from "./CustomerManagement";
+import AdminCustomerDetail from "./AdminCustomerDetail";
+import { useNavigate } from "react-router-dom";
+import PromoPage from "./PromoPage";
+import AdminBanner from "./AdminBanner";
+import ComingSoon from "./ComingSoon";
+import ChatBox from "./components/ChatBox";
+import FloatingSupport from "./components/FloatingSupport.jsx";
+
 
 function App() {
+  const navigate = useNavigate();
+
   return (
     <>
       <ScrollToTop />
@@ -56,9 +69,6 @@ function App() {
         <Route path="/warranty" element={<Warranty />} />
         <Route path="/return-policy" element={<ReturnPolicy />} />
         <Route path="/contact" element={<Contact />} />
-
-        <Route path="/featured" element={<ProductListPage type="featured" />} />
-        <Route path="/sale" element={<ProductListPage type="sale" />} />
         <Route path="/category/:slug" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/checkout" element={<Checkout />} />
@@ -66,7 +76,10 @@ function App() {
         <Route path="/login" element={<LoginUser />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/orders" element={<Orders />} />
-
+        <Route path="/featured" element={<ProductListPage type="featured" />} />
+<Route path="/sale" element={<ProductListPage type="sale" />} />
+<Route path="/promo/:slug" element={<PromoPage />} />
+<Route path="/coming-soon" element={<ComingSoon />} />
         {/* 👉 Sau này bạn thêm category page, product detail page cũng để trong đây */}
 
       </Route>
@@ -164,6 +177,66 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+  path="/admin-banners"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+      <AdminLayout>
+        <AdminBanner />
+      </AdminLayout>
+    </ProtectedRoute>
+  }
+/>
+      <Route
+  path="/admin-customers"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+      <AdminLayout>
+        <CustomerManagement />
+      </AdminLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/customers/:id"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+      <AdminLayout>
+        <AdminCustomerDetail />
+      </AdminLayout>
+    </ProtectedRoute>
+  }
+/>
+      <Route
+  path="/admin-users"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <AdminLayout>
+        <AdminUsers />
+      </AdminLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin-security-logs"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <AdminLayout>
+        <AdminSecurityLogs />
+      </AdminLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin-activity-logs"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <AdminLayout>
+        <AdminActivityLogs />
+      </AdminLayout>
+    </ProtectedRoute>
+  }
+/>
 
       {/* ===== STAFF ===== */}
       <Route
@@ -187,10 +260,39 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-        
+      <Route
+  path="/staff-customers"
+  element={
+    <ProtectedRoute allowedRoles={["STAFF"]}>
+      <StaffLayout>
+        <CustomerManagement />
+      </StaffLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/staff-banners"
+  element={
+    <ProtectedRoute allowedRoles={["STAFF"]}>
+      <StaffLayout>
+        <AdminBanner />   {/* dùng chung component */}
+      </StaffLayout>
+    </ProtectedRoute>
+  }
+/>
+       <Route
+  path="/staff/customers/:id"
+  element={
+    <ProtectedRoute allowedRoles={["STAFF"]}>
+      <StaffLayout>
+        <AdminCustomerDetail />
+      </StaffLayout>
+    </ProtectedRoute>
+  }
+/> 
 
     </Routes>
+     
       </>
 
 

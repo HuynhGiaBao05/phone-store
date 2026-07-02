@@ -1,75 +1,102 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "./api";
 import "./StaffOrders.css";
+import React from "react";
 
 function StaffOrders() {
 
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState("ALL");
+   const API_BASE = "http://localhost:5000";
 
-  const token = localStorage.getItem("adminToken");
+  const getImageUrl = (img) => {
+    if (!img) return "/placeholder.png";
+
+    if (Array.isArray(img)) {
+      if (img.length === 0) return "/placeholder.png";
+      img = img[0];
+    }
+
+    if (!img) return "/placeholder.png";
+
+    if (typeof img !== "string") return "/placeholder.png";
+
+    if (img.startsWith("http")) return img;
+
+    return `${API_BASE}/uploads/${img}`;
+  };
+
+  // 🔥 lưu order đang mở
+const [expandedOrder, setExpandedOrder] = useState(null);
+
+
+const [currentPage, setCurrentPage] = useState(1);
+const ordersPerPage = 20;
 
   // ===== FETCH ORDERS =====
-  useEffect(() => {
+useEffect(() => {
+  console.log("LOCAL STORAGE:", localStorage); 
+  const token = localStorage.getItem("token");
+
+  if (token) {
     fetchOrders();
-  }, []);
+  }
+}, []);
 
-  const fetchOrders = async () => {
+ const fetchOrders = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    console.log("TOKEN:", token);
 
-    try {
+    const res = await api.get("/api/orders", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
 
-      const res = await axios.get(
-        "http://localhost:5000/api/orders",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+    console.log("ORDERS:", res.data);
+    setOrders(res.data);
+
+  } catch (err) {
+    console.log("ERROR:", err.response?.data);
+  }
+};
+const updateStatus = async (id, status) => {
+  try {
+    const token = localStorage.getItem("token");
+     console.log("TOKEN UPDATE:", token);
+
+    await api.put(
+      `/api/orders/${id}/status`,
+      { status },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      );
+      }
+    );
 
-      setOrders(res.data);
-
-    } catch (err) {
-
-      console.log("Lỗi lấy orders:", err);
-
-    }
-
-  };
-
-  // ===== UPDATE STATUS =====
-  const updateStatus = async (id, status) => {
-
-    try {
-
-      await axios.put(
-        `http://localhost:5000/api/orders/${id}/status`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      fetchOrders();
-
-    } catch (err) {
-
-      console.log("Lỗi update status:", err);
-
-    }
-
-  };
+    fetchOrders();
+  } catch (err) {
+    console.log("ERROR:", err.response?.data);
+  }
+};
 
   // ===== FILTER =====
-  const filteredOrders =
+const filteredOrders = orders
+  .filter((o) =>
     filter === "ALL"
-      ? orders
-      : orders.filter((o) => o.status === filter);
+      ? true
+      : o.status?.toUpperCase() === filter
+  )
+  .filter(order => order && order._id)
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const indexOfLast = currentPage * ordersPerPage;
+const indexOfFirst = indexOfLast - ordersPerPage;
+const currentOrders = filteredOrders.slice(indexOfFirst, indexOfLast);
+const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   return (
-
     <div className="orders-container">
 
       {/* HEADER */}
@@ -120,90 +147,164 @@ function StaffOrders() {
       {/* TABLE */}
       <div className="orders-card">
 
-        <table className="orders-table">
+    
+        <div className="table-wrapper">
+  <table className="orders-table">
 
           <thead>
             <tr>
               <th>Mã đơn</th>
               <th>Khách hàng</th>
+              <th>SĐT</th>
               <th>Tổng tiền</th>
+              <th>Thanh toán</th>
               <th>Trạng thái</th>
               <th>Cập nhật</th>
-              <th>Lịch sử</th>
             </tr>
           </thead>
 
           <tbody>
 
-            {filteredOrders.map((order) => (
+{currentOrders.map((order) => (
+  <React.Fragment key={order._id}>
+    {/* 🔥 ROW CHÍNH */}
+    <tr
+  onClick={() =>
+    setExpandedOrder(
+      expandedOrder === order._id ? null : order._id
+    )
+  }
+  style={{
+    cursor: "pointer",
+    background:
+      order.paymentStatus === "UNPAID" ? "#fff5f5" : "#f0fff4"
+  }}
+>
+  <td>#{order._id.slice(-6)}</td>
+  <td>{order.user?.fullName?.trim() || "Khách lẻ"}</td>
+  <td>
+  {order.shippingInfo?.phone &&
+   order.shippingInfo.phone.length > 5
+    ? order.shippingInfo.phone
+    : "N/A"}
+</td>
+  <td>
+  {order.totalAmount
+    ? order.totalAmount.toLocaleString() + " ₫"
+    : "0 ₫"}
+</td>
 
-              <tr key={order._id}>
+  <td>
+    {order.paymentStatus === "PAID"
+      ? "✅ Đã thanh toán"
+      : "❌ Chưa thanh toán"}
+  </td>
 
-                <td>#{order._id.slice(-6)}</td>
+  <td>
+    <span className={`status-badge ${order.status.toLowerCase()}`}>
+      {order.status}
+    </span>
+  </td>
 
-                <td>{order.user?.fullName}</td>
+  <td>
+    <select
+      value={order.status}
+      onClick={(e) => e.stopPropagation()} // 🔥 FIX BUG CLICK
+      onChange={(e) =>
+        updateStatus(order._id, e.target.value)
+      }
+    >
+      <option value="PENDING">PENDING</option>
+      <option value="CONFIRMED">CONFIRMED</option>
+      <option value="SHIPPING">SHIPPING</option>
+      <option value="DELIVERED">DELIVERED</option>
+      <option value="CANCELLED">CANCELLED</option>
+    </select>
+  </td>
+</tr>
 
-                <td>{order.totalAmount.toLocaleString()} ₫</td>
+    {/* 🔥 ROW CHI TIẾT */}
+    {expandedOrder === order._id && (
+  <tr>
+    <td colSpan="7">
+      <div style={{
+        background: "#fafafa",
+        padding: 20,
+        borderRadius: 10
+      }}>
 
-                <td>
-                  <span
-                    className={`status-badge ${order.status.toLowerCase()}`}
-                  >
-                    {order.status}
-                  </span>
-                </td>
+        <h4>📦 Chi tiết đơn hàng</h4>
 
-                <td>
+        {order.items.map(item => (
+          <div key={item._id} style={{
+            display: "flex",
+            gap: 10,
+            marginBottom: 10
+          }}>
+            <img
+  src={getImageUrl(item.product?.images || item.product?.image)}
+  alt={item.product?.name}
+  style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8 }}
+  onError={(e) => (e.target.src = "/placeholder.png")}
+/>
 
-                  <select
-                    value={order.status}
-                    onChange={(e) =>
-                      updateStatus(order._id, e.target.value)
-                    }
-                  >
+            <div>
+              {item.product?.name} x{item.quantity}
+            </div>
 
-                    <option value="PENDING">PENDING</option>
-                    <option value="CONFIRMED">CONFIRMED</option>
-                    <option value="SHIPPING">SHIPPING</option>
-                    <option value="DELIVERED">DELIVERED</option>
-                    <option value="CANCELLED">CANCELLED</option>
+            <div style={{ marginLeft: "auto", color: "red" }}>
+              {(item.price * item.quantity).toLocaleString()}đ
+            </div>
+          </div>
+        ))}
 
-                  </select>
+        <hr />
 
-                </td>
+        <div><b>Người nhận:</b> {order.user?.fullName}</div>
+        <div><b>SĐT:</b> {order.shippingInfo?.phone}</div>
+        <div><b>Địa chỉ:</b> {order.shippingInfo?.address}</div>
 
-                <td>
+        <div>
+          <b>Hình thức:</b>{" "}
+          {order.deliveryMethod === "DELIVERY"
+  ? "🚚 Giao tận nơi"
+  : order.deliveryMethod === "STORE"
+  ? "🏪 Nhận tại cửa hàng"
+  : "❓ Không xác định"}
+        </div>
 
-                  <div className="timeline">
+        <div><b>Thanh toán:</b> {order.paymentMethod}</div>
 
-                    {order.statusHistory?.map((h, index) => (
-
-                      <div key={index} className="timeline-item">
-
-                        <strong>{h.status}</strong>
-
-                        <br />
-
-                        <small>
-                          {new Date(h.changedAt).toLocaleString()}
-                        </small>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                </td>
-
-              </tr>
-
-            ))}
+      </div>
+    </td>
+  </tr>
+)}
+  </React.Fragment>
+))}
 
           </tbody>
 
         </table>
+        </div>
+<div style={{ marginTop: 20, textAlign: "center" }}>
+  <button
+    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+  >
+    ← Prev
+  </button>
 
+  <span style={{ margin: "0 10px" }}>
+    Trang {currentPage} / {totalPages}
+  </span>
+
+  <button
+    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+    disabled={currentPage === totalPages}
+  >
+    Next →
+  </button>
+</div>
         {filteredOrders.length === 0 && (
           <p className="no-data">Không có đơn hàng</p>
         )}

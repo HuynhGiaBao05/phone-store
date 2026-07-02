@@ -74,10 +74,14 @@ function CategoryPage() {
               </span>
             )}
 
-            <img
-            src={p.image}
-            alt={p.name}
-          />
+           <img
+  src={
+    p.images?.[0]?.startsWith("http")
+      ? p.images[0]
+      : `http://localhost:5000/${p.images?.[0]}`
+  }
+  alt={p.name}
+/>
             <h3>{p.name}</h3>
 
             {/* ===== PRICE BOX ===== */}

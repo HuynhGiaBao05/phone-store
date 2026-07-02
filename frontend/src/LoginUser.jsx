@@ -5,17 +5,24 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import { useRef } from "react";
+import { useLocation } from "react-router-dom";
+
 
 function LoginUser() {
   const [isActive, setIsActive] = useState(false);
   const navigate = useNavigate();
-
+  const lockIntervalRef = useRef(null);
   // LOGIN
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [emailError, setEmailError] = useState("");
 const [passwordError, setPasswordError] = useState("");
 const [showLoginPassword, setShowLoginPassword] = useState(false);
+const location = useLocation();
+const from = location.state?.from || "/";
+//lock
+const [isLocked, setIsLocked] = useState(false);
 
 //verify OTP
 const [verifyLoading, setVerifyLoading] = useState(false);
@@ -39,6 +46,7 @@ const [resetLoading, setResetLoading] = useState(false);//check format
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+const [lockTime, setLockTime] = useState(0);
 
 const [forgotEmail, setForgotEmail] = useState("");
 const [forgotOtp, setForgotOtp] = useState("");
@@ -57,60 +65,136 @@ const [otp, setOtp] = useState("");
      const cleanPassword = loginPassword.trim();
 
 
-if (loginLoading) return;
+
+if (loginLoading || isLocked) return;
+setLoginLoading(true);
 
 setEmailError("");
 setPasswordError("");
 
 if (!cleanEmail) {
-  setEmailError("Vui lòng nhập email");
+  toast.error("Vui lòng nhập email");
+  setLoginLoading(false);
   return;
 }
 
 if (!emailRegex.test(cleanEmail)) {
-  setEmailError("Email không hợp lệ");
+  toast.error("Email không hợp lệ");
+  setLoginLoading(false);
   return;
 }
 
 if (!cleanPassword) {
-  setPasswordError("Vui lòng nhập mật khẩu");
+  toast.error("Vui lòng nhập mật khẩu");
+  setLoginLoading(false);
   return;
 }
-setLoginLoading(true);
 
 
 
    
   try {
-    const res = await axios.post(
-      "http://localhost:5000/api/users/login",
-      {
-        email: cleanEmail,
-        password: cleanPassword
-      }
-      
-    );
+   const res = await axios.post(
+  "http://localhost:5000/api/users/login",
+  {
+    email: cleanEmail,
+    password: cleanPassword
+  }
+);
 
-    const role = res.data.role?.toUpperCase();
+// 🔥 HANDLE MFA
+if (res.data.requireApproval) {
+  toast.info("Vui lòng xác nhận email để đăng nhập");
+  return;
+}
 
+const user = res.data?.data?.user;
+const token = res.data?.data?.token;
+
+if (!user || !token) {
+  toast.error("Dữ liệu trả về lỗi");
+  return;
+}
+
+const role = user.role?.toUpperCase();
 
 if (role !== "USER") {
   toast.error("Tài khoản này không phải USER");
   return;
 }
-if (!res.data.token) {
+if (!token) {
   toast.error("Token không hợp lệ");
   return;
 }
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", role);
+   localStorage.setItem("user_token", token);
+localStorage.setItem("user_role", role);
+    window.dispatchEvent(new Event("authChanged"));
+
     toast.success("Đăng nhập thành công!");
     toast.info("Đã gửi email cảnh báo đăng nhập");
-    navigate("/"); // chuyển về home
+    const redirect = localStorage.getItem("redirectAfterLogin");
+
+if (redirect) {
+  localStorage.removeItem("redirectAfterLogin");
+  navigate(redirect); // 🔥 quay lại trang cũ
+
+} else {
+  navigate(from, { replace: true }); // fallback
+}
 setLoginEmail("");
 setLoginPassword("");
-}catch (error) {
-  toast.error(error.response?.data?.message || "Đăng nhập thất bại");
+} catch (error) {
+  console.log("LOGIN ERROR:", error.response?.data);
+  const type = error.response?.data?.type;
+  const message = error.response?.data?.message;
+
+  // ✅ FIX CHÍNH Ở ĐÂY
+  if (message === "Please verify account") {
+    toast.error("Tài khoản chưa xác thực OTP");
+    return;
+  }
+
+  switch (type) {
+    case "LOGIN_FAIL":
+      toast.error("Sai email hoặc mật khẩu");
+      break;
+
+ case "ACCOUNT_LOCKED":
+  toast.error(message || "Tài khoản bị khóa");
+
+  setIsLocked(true);
+
+  const remaining = error.response?.data?.remainingTime || 60;
+
+  // clear interval cũ nếu có
+  if (lockIntervalRef.current) {
+    clearInterval(lockIntervalRef.current);
+  }
+
+  setIsLocked(true);
+setLockTime(remaining);
+
+// clear interval cũ
+if (lockIntervalRef.current) {
+  clearInterval(lockIntervalRef.current);
+}
+
+lockIntervalRef.current = setInterval(() => {
+  setLockTime((prev) => {
+    if (prev <= 1) {
+      clearInterval(lockIntervalRef.current);
+      setIsLocked(false);
+      return 0;
+    }
+    return prev - 1;
+  });
+}, 1000);
+
+  break;
+
+    default:
+      toast.error(message || "Đăng nhập thất bại");
+  }
 }
  finally {
   setLoginLoading(false);
@@ -392,9 +476,14 @@ if (!cleanEmail) {
 
           <button
   type="submit"
-disabled={loginLoading || !!emailError || !!passwordError}>
-            {loginLoading ? "Đang xử lý..." : "Đăng nhập"}
-          </button>
+  disabled={loginLoading || isLocked || !!emailError || !!passwordError}
+>
+  {isLocked
+  ? `Thử lại sau ${lockTime}s`
+  : loginLoading
+  ? "Đang đăng nhập..."
+  : "Đăng nhập"}
+</button>
 
           <p className="forgot-link">
             <span onClick={() => setForgotStep("email")}>

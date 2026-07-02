@@ -1,7 +1,9 @@
-import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./login.css";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { useRef } from "react";
 
 function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -9,28 +11,42 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [isLocked, setIsLocked] = useState(false);
+  const lockIntervalRef = useRef(null);
+
+  const [lockTime, setLockTime] = useState(0);
+useEffect(() => {
+  return () => {
+    if (lockIntervalRef.current) {
+      clearInterval(lockIntervalRef.current);
+    }
+  };
+}, []);
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get("status");
+
+  if (status === "denied") {
+    toast.error("Bạn đã từ chối đăng nhập");
+    window.history.replaceState({}, document.title, "/admin-login");
+  }
+}, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (loading) return;
+    if (loading || isLocked) return;
     setLoading(true);
 // ✅ CHECK EMAIL
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 if (!emailRegex.test(email)) {
-  alert("Email không hợp lệ");
+  toast.error("Email không hợp lệ");
   setLoading(false);
   return;
 }
-// ✅ CHECK PASSWORD
-const passwordRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-
-if (!passwordRegex.test(password)) {
-  alert(
-    "Mật khẩu phải >=8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
-  );
+if (!password) {
+  toast.error("Vui lòng nhập mật khẩu");
   setLoading(false);
   return;
 }
@@ -43,35 +59,89 @@ if (!passwordRegex.test(password)) {
 
       // 🔥 MFA: nếu cần xác nhận email
 if (res.data.requireApproval) {
-  alert("Vui lòng xác nhận đăng nhập qua email");
-
-  navigate(`/mfa-wait?email=${email}`);
+  toast.info("Vui lòng xác nhận đăng nhập qua email");
+  navigate(`/mfa-wait?token=${res.data.loginToken}`);
   return;
 }
 
 // ✅ CHỈ LƯU TOKEN KHI CÓ TOKEN
-if (res.data.token) {
-  localStorage.setItem("adminToken", res.data.token);
-  localStorage.setItem("adminRole", res.data.role);
+if (res.data.data?.token) {
+const role = res.data.data?.user?.role?.toUpperCase();
+
+if (role === "ADMIN") {
+  localStorage.setItem("adminToken", res.data.data.token);
 }
 
-const role = res.data.role?.toUpperCase();
+if (role === "STAFF") {
+  localStorage.setItem("staffToken", res.data.data.token);
+}
+}
+
+const role = res.data.data?.user?.role?.toUpperCase();
       // 🔀 Điều hướng theo role
       if (role === "ADMIN") {
         navigate("/admin-dashboard");
       } else if (role === "STAFF") {
         navigate("/staff-products");
       } else {
-        alert("Tài khoản USER không được phép đăng nhập admin");
+         toast.error("Tài khoản USER không được phép đăng nhập admin");
       }
 
-    } catch (error) {
-      alert(error.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+  console.log("ERROR:", error.response?.data);
 
+  if (error.response?.status === 429) {
+    toast.info("Vui lòng xác nhận đăng nhập qua email");  
+    setLoading(false);
+    navigate(`/mfa-wait?token=${error.response?.data?.loginToken}`);
+    return;
+  }
+
+  const type = error.response?.data?.type;
+  const message = error.response?.data?.message;
+
+  if (type === "LOGIN_FAIL") {
+    toast.error("Sai email hoặc mật khẩu");
+  } 
+  else if (type === "ACCOUNT_LOCKED") {
+    setIsLocked(true);
+
+    let time = error.response?.data?.remainingTime || 60;
+    setLockTime(time);
+
+    const id = toast.error(
+      `🔒 Tài khoản bị khóa (${time}s). Vui lòng thử lại sau`,
+      { autoClose: false }
+    );
+
+    lockIntervalRef.current = setInterval(() => {
+      setLockTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(lockIntervalRef.current);
+          lockIntervalRef.current = null;
+          toast.dismiss();
+          setIsLocked(false);
+          setLockTime(0);
+          return 0;
+        }
+
+        const newTime = prev - 1;
+
+        toast.update(id, {
+          render: `🔒 Tài khoản bị khóa (${newTime}s). Vui lòng thử lại sau`
+        });
+
+        return newTime;
+      });
+    }, 1000);
+  } else {
+    toast.error(message || "Đăng nhập thất bại");
+  }
+
+} finally {
+  setLoading(false);
+}
+  };
   return (
     <div className="login-container">
       <div className="login-card">
@@ -106,16 +176,20 @@ const role = res.data.role?.toUpperCase();
     👁️
   </span>
 </div>
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Đang đăng nhập..." : "Login"}
-          </button>
+<button type="submit" disabled={loading || isLocked}>
+  {isLocked
+    ? `Thử lại sau ${lockTime}s`
+    : loading
+    ? "Đang đăng nhập..."
+    : "Đăng nhập"}
+</button>
 
           <p style={{ marginTop: "15px" }}>
             <a href="/forgot-password">Quên mật khẩu?</a>
           </p>
         </form>
       </div>
+      
     </div>
   );
 }

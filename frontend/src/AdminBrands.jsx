@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout";
 import "./AdminBrands.css";
+import { toast } from "react-toastify";
 
 function AdminBrands() {
 
@@ -19,22 +20,28 @@ function AdminBrands() {
 
   const handleCreate = async () => {
     if (!newBrand) {
-      alert("Vui lòng nhập tên thương hiệu");
+      toast.error("Vui lòng nhập tên thương hiệu");
       return;
     }
 
-    await axios.post("http://localhost:5000/api/brands", {
-      name: newBrand,
-    });
+   try {
+  await axios.post("http://localhost:5000/api/brands", {
+    name: newBrand,
+  });
 
-    setNewBrand("");
-    fetchBrands();
+  toast.success("🎉 Thêm thương hiệu thành công!");
+  setNewBrand("");
+  fetchBrands();
+
+} catch (err) {
+  toast.error(err.response?.data?.message || "❌ Lỗi!");
+}
   };
-
   const handleDelete = async (id) => {
   if (!window.confirm("Bạn có chắc muốn xóa?")) return;
 
   await axios.delete(`http://localhost:5000/api/brands/${id}`);
+  toast.success("🗑️ Xóa thương hiệu thành công!");
   fetchBrands();
 };
 

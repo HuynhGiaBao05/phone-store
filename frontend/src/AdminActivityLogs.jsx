@@ -21,31 +21,33 @@ const [search, setSearch] = useState(""); // 🔍 tìm user
         "http://localhost:5000/api/users/activity-logs",
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
-      setLogs(res.data);
+      setLogs(res.data.data || res.data || []);
     } catch (err) {
       console.log(err);
     }
   };
 // 🔍 FILTER + SEARCH
-const filteredLogs = logs
-  .filter((log) =>
-    filter ? log.action.includes(filter) : true
-  )
-  .filter((log) =>
-    search
-      ? log.user?.fullName
-          ?.toLowerCase()
-          .includes(search.toLowerCase()) ||
-        log.user?.email
-          ?.toLowerCase()
-          .includes(search.toLowerCase())
-      : true
-  );
+const filteredLogs = Array.isArray(logs)
+  ? logs
+      .filter((log) =>
+        filter ? log.action.includes(filter) : true
+      )
+      .filter((log) =>
+        search
+          ? log.user?.fullName
+              ?.toLowerCase()
+              .includes(search.toLowerCase()) ||
+            log.user?.email
+              ?.toLowerCase()
+              .includes(search.toLowerCase())
+          : true
+      )
+  : [];
 
 // 🔢 PAGINATION
 const indexOfLast = currentPage * logsPerPage;

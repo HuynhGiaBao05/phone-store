@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import "./Staff.css";
+import { toast } from "react-toastify";
 
 function StaffLayout({ children }) {
 
@@ -24,7 +25,18 @@ function StaffLayout({ children }) {
         >
           🧾 Đơn hàng
         </Link>
-
+        <Link
+          to="/staff-customers"
+          className={location.pathname.includes("customers") ? "active" : ""}
+        >
+          👥 Khách hàng
+        </Link>
+<Link
+  to="/staff-banners"
+  className={location.pathname.includes("banners") ? "active" : ""}
+>
+  🎯 Banner
+</Link>
       </aside>
 
       <main className="staff-content">
